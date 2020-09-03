@@ -1,4 +1,4 @@
-from power import Power
+from core.power import Power
 
 
 class Component:
