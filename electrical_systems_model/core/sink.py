@@ -1,7 +1,12 @@
-import component
+class Sinks:
+    def __init__(self, power, location):
+        self.power_in = power
+        self.location = location  # location is a 3d vector
 
-class Transmission(Component):
+class MechanicalSink:
     def __init__(self):
-        self.power_out = None
-        self.power_in = None
+        super().__init__()
 
+class ElectricalSink:
+    def __init__(self):
+        super().__init__()
