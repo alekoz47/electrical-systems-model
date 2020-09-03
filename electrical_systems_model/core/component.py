@@ -1,4 +1,4 @@
-import power
+from power import Power
 
 
 class Component:

@@ -1,4 +1,5 @@
-import component
+from component import Component
+
 
 class Transmission(Component):
     def __init__(self):
