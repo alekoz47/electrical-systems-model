@@ -12,3 +12,9 @@ class Component:
 
     def get_children(self):
         return self._children
+
+    def add_parents(self, new_parents):
+        self._parents.add(new_parents)
+
+    def add_children(self, new_children):
+        self._children.add(new_children)
