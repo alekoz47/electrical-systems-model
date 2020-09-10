@@ -1,5 +1,5 @@
 from core.power import Power
-
+from abc import ABC, abstractmethod
 
 class Component:
 
@@ -15,6 +15,6 @@ class Component:
     def get_children(self):
         return self._children
 
-    #@abstractmethod
+    @abstractmethod
     def get_power_in(self):
         pass
