@@ -6,10 +6,10 @@ class Component:
     _name = ""
     _index = 0
 
-    def __init__(self, location, parents=None, children=None):
+    def __init__(self, location):
         self.location = location
-        self._parents = parents
-        self._children = children
+        self._parents = None
+        self._children = None
         self.power_in = None
         self.power_out = None
 

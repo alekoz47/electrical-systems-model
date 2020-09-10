@@ -3,20 +3,20 @@ from core.power import Power
 
 
 class Sink(Component):
-    def __init__(self, location, parents, children, power):
-        super().__init__(location, parents, children)
+    def __init__(self, location, power):
+        super().__init__(location)
         self.power_in = power
 
 
 
 class MechanicalSink(Sink):
-    def __init__(self, location, parents, children, power):
-        super().__init__(parents, children, power, location)
+    def __init__(self, location, power):
+        super().__init__(location, power)
 
 
 class ElectricalSink(Sink):
-    def __init__(self, location, parents, children, power_in, voltage, phase):
-        super().__init__(location, parents, children, power_in)
+    def __init__(self, location, power_in, voltage, phase):
+        super().__init__(location, power_in)
         self.voltage_level = voltage
         self.phase = phase
 

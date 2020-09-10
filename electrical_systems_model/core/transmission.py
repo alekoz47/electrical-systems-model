@@ -3,18 +3,18 @@ from core.power import AlternatingCurrent
 
 
 class Transmission(Component):
-    def __init__(self, location, parents, children):
-        super().__init__(parents, children)
+    def __init__(self, location):
+        super().__init__(location)
 
 
 class Transformer(Transmission):
-    def __init__(self, location, parents, children, efficiency=0.97):
-        super().__init__(location, parents, children)
+    def __init__(self, location, efficiency=0.97):
+        super().__init__(location)
         self.efficiency = efficiency
 
     def get_power_in(self):
-        self.power_out = AlternatingCurrent(1,2,3,4)
-        voltage_level_in = 0
+        self.power_out = AlternatingCurrent(1,2,3,4) # for testing purposes
+        voltage_level_in = 0 # for testing purposes
 
         self.power_in = AlternatingCurrent(self.power_out.power / self.efficiency,
                                            voltage_level_in,
