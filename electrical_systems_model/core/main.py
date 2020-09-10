@@ -22,6 +22,8 @@ print(power.power, power.voltage, power.frequency, power.power_factor)
 transformer = Transformer(1,2,3)
 transformer.get_power_in()
 print(transformer.power_in.power)
+print(transformer.power_in.voltage)
+
 
 #if __name__ == "__main__":
     #test_component = Component()

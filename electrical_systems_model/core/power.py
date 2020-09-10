@@ -20,7 +20,7 @@ class AlternatingCurrent(ElectricPower):
 
 class SinglePhase(AlternatingCurrent):
     def __init__(self, power, voltage, frequency, power_factor):
-        super().__init__(power, voltage,frequency,power_factor)
+        super().__init__(power, voltage, frequency, power_factor)
         self.current = self.power_factor * self.power / self.voltage
 
 
@@ -31,12 +31,12 @@ class ThreePhase(AlternatingCurrent):
 
 
 class DirectCurrent(ElectricPower):
-    def __init__(self):
+    def __init__(self, power, voltage):
         super().__init__(power, voltage)
         self.current = self.power / self.voltage
 
 
 class MechanicalPower(Power):
-    def __init(self):
-        super().__init__(power, rpm)
+    def __init(self, power, rpm):
+        super().__init__(power)
         self.rpm = rpm
