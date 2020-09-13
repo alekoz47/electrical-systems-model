@@ -1,17 +1,16 @@
-from core.power import Power
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
 
 class Component:
-
-    _name = ""
-    _index = 0
 
     def __init__(self, location):
         self.location = location
         self._parents = None
         self._children = None
+        self._index = 0
         self.power_in = None
         self.power_out = None
+        self.name = ""
 
     def get_parents(self):
         return self._parents

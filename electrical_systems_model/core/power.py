@@ -1,3 +1,4 @@
+import numpy
 
 
 class Power:
