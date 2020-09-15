@@ -17,7 +17,7 @@ class ElectricPower(Power):
         self.voltage = voltage
 
     def add(self, power):
-        self.power = self.power + power
+        self.power = self.power + power.power
 
 
 class AlternatingCurrent(ElectricPower):
