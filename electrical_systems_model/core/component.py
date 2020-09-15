@@ -25,6 +25,11 @@ class Component:
     def get_power_in(self):
         pass
 
+    def get_power_out(self):
+        for child in self._children:
+            self.power_out.add(child.get_power_in())
+        return self.power_out
+
     def set_parents(self, parents):
         self._parents = parents
 
