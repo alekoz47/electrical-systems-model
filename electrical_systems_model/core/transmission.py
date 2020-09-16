@@ -26,6 +26,8 @@ class Transformer(Transmission):
         self.power_in = self.power_out.copy()
         self.power_in.efficiency_loss(self.efficiency)
         self.power_in.voltage = self.voltage_in
+        return self.power_in
+
 
 class Switchboard(Transmission):
     def __init__(self, location, efficiency=0.97):
@@ -39,6 +41,7 @@ class Switchboard(Transmission):
                                    voltage_level_in,
                                    self.power_out.frequency,
                                    self.power_out.power_factor)
+        return self.power_in
 
 
 class Cable(Transmission):
@@ -51,5 +54,6 @@ class Cable(Transmission):
         self.resistance = 10 # just for testing purposes
         self.power_in = self.power_out.copy()
         self.power_in.resistance_loss(self.resistance)
+        return self.power_in
 
 
