@@ -52,7 +52,7 @@ class SinglePhase(AlternatingCurrent):
 
 
 class ThreePhase(AlternatingCurrent):
-    def __init__(self, power, voltage, frequency, power_factor=1):
+    def __init__(self, power, voltage, frequency, power_factor):
         super().__init__(power, voltage, frequency, power_factor)
         self.current = numpy.sqrt(3) * self.power_factor * self.power / self.voltage
 
