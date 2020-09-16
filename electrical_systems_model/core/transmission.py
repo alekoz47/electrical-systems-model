@@ -23,12 +23,9 @@ class Transformer(Transmission):
     def get_power_in(self):
         super().get_power_in()
         self.voltage_out = self.power_out.voltage
-        self.power_in = ThreePhase(self.power_out.power / self.efficiency,
-                                   self.voltage_in,
-                                   self.power_out.frequency,
-                                   self.power_out.power_factor)
-        return self.power_in
-
+        self.power_in = self.power_out.copy()
+        self.power_in.efficiency_loss(self.efficiency)
+        self.power_in.voltage = self.voltage_in
 
 class Switchboard(Transmission):
     def __init__(self, location, efficiency=0.97):
@@ -45,4 +42,14 @@ class Switchboard(Transmission):
 
 
 class Cable(Transmission):
-    pass
+    def __init__(self, location):
+        super().__init__(location)
+        self.resistance = None
+
+    def get_power_in(self):
+        super().get_power_in()
+        self.resistance = 10 # just for testing purposes
+        self.power_in = self.power_out.copy()
+        self.power_in.resistance_loss(self.resistance)
+
+

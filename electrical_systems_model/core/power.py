@@ -10,14 +10,23 @@ class Power:
     def add(self, power):
         pass
 
+    def efficiency_loss(self, efficiency):
+        self.power = self.power / efficiency
+
 
 class ElectricPower(Power):
     def __init__(self, power, voltage):
         super().__init__(power)
         self.voltage = voltage
+        self.current = None
 
     def add(self, power):
         self.power = self.power + power.power
+
+    def resistance_loss(self, resistance):
+        power_loss = self.current**2 * resistance
+        self.power = self.power + power_loss
+
 
 
 class AlternatingCurrent(ElectricPower):
