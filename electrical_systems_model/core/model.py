@@ -2,7 +2,7 @@ import copy
 
 import treelib as tree
 
-from core.sink import ElectricalSink
+from core.sink import Sink, ElectricalSink
 from core.source import Source
 from core.transmission import Cable, Transformer
 from core.component import Component
