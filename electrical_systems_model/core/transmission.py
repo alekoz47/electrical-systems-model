@@ -3,12 +3,13 @@ from core.power import ThreePhase
 
 
 class Transmission(Component):
+
     def __init__(self, location):
         super().__init__(location)
 
     def get_power_in(self):
         self.power_out = self.get_power_out()
-        self.power_in = self.power_out
+        self.power_in = self.power_out.copy()
         return self.power_in
 
 
@@ -29,14 +30,16 @@ class Transformer(Transmission):
         return self.power_in
 
 
-class Switchboard(Transmission):
+class Panel(Transmission):
+
     def __init__(self, location, efficiency=0.97):
         super().__init__(location)
         self.efficiency = efficiency
 
     def get_power_in(self):
+        super().get_power_in()
         voltage_level_in = 0
-        self.power_out = ThreePhase(1, 2, 3, 4)  # for testing only
+        self.power_out = ThreePhase(1, 2, 3, 4)  # for testing purposes
         self.power_in = ThreePhase(self.power_out.power / self.efficiency,
                                    voltage_level_in,
                                    self.power_out.frequency,
@@ -45,15 +48,14 @@ class Switchboard(Transmission):
 
 
 class Cable(Transmission):
+
     def __init__(self, location):
         super().__init__(location)
         self.resistance = None
 
     def get_power_in(self):
         super().get_power_in()
-        self.resistance = 10 # just for testing purposes
+        self.resistance = 10  # for testing purposes
         self.power_in = self.power_out.copy()
         self.power_in.resistance_loss(self.resistance)
         return self.power_in
-
-
