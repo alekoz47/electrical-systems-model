@@ -1,5 +1,6 @@
 from core.model import Model
 from core.sink import ElectricalSink
+from core.transmission import Cable
 
 
 def main():
@@ -9,17 +10,27 @@ def main():
     # solve model
     model = Model()
     model.import_data("")
-    print(model.solve_model())
-    # TODO: add printout
-    tree = model._sink_tree
-    tree.show()
+    print("Test 1 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " kW")
+    model.print_tree()
 
     # test adding some components and resolving
-    motor2 = ElectricalSink([0, 0, 0], 2, 120, 0.8)
+    motor2 = ElectricalSink([0, 0, 0], 10, 120, 0.8)
     motor2.name = "Motor 2"
-    model.add_sink(motor2, 3)
-    print(model.solve_model())
-    tree.show()
+    cable3 = Cable([0, 0, 0])
+    cable3.name = "Cable 3"
+    model.add_sink(cable3, 2)
+    model.add_sink(motor2, 5)
+    print("Test 2 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " kW")
+    model.print_tree()
+
+    motor3 = ElectricalSink([0, 0, 0], 10, 120, 0.8)
+    motor3.name = "Motor 3"
+    cable4 = Cable([0, 0, 0])
+    cable4.name = "Cable 4"
+    model.add_sink(cable4, 2)
+    model.add_sink(motor3, 7)
+    print("Test 3 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " kW")
+    model.print_tree()
 
 
 if __name__ == "__main__":

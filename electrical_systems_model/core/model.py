@@ -30,7 +30,7 @@ class Model:
 
         # solve root -> solve tree
         root_power = root_comp.get_power_in()
-        return abs(root_power.power)
+        return root_power
 
     def import_data(self, filepath):
         # TODO: add read-in from CSV file
@@ -95,6 +95,9 @@ class Model:
         # if source.get_index() == 0:
         #     print("Error: Source does not exist in list. No source removed.")
         self._source_list.pop(source.get_index())
+
+    def print_tree(self):
+        self._sink_tree.show()
 
     def copy(self):
         return copy.copy(self)
