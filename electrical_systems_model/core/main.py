@@ -2,6 +2,7 @@ from core.sink import Sink
 from core.sink import ElectricalSink
 from core.power import AlternatingCurrent
 from core.transmission import Transformer
+from core.transmission import Cable
 
 test = Sink(1, 2)
 
@@ -22,6 +23,8 @@ transformer = Transformer(1, 2)
 transformer.get_power_in()
 print(transformer.power_in.power)
 print(transformer.power_in.voltage)
+
+
 
 
 # if __name__ == "__main__":

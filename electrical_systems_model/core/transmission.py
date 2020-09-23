@@ -1,5 +1,6 @@
 from core.component import Component
 from core.power import ThreePhase
+import csv
 
 
 class Transmission(Component):
@@ -42,9 +43,13 @@ class Switchboard(Transmission):
 
 
 class Cable(Transmission):
+    _CABLE_SIZE = dict()
+
     def __init__(self, location):
         super().__init__(location)
         self.resistance = None
+        if not bool(self.data):
+            self.load_data()
 
     def get_power_in(self):
         super().get_power_in()
@@ -52,4 +57,9 @@ class Cable(Transmission):
         self.power_in = self.power_out.copy()
         self.power_in.resistance_loss(self.resistance)
 
+    def load_data(self):
+        data_path = '../data/abs_cable_size.csv'
+        with open(data_path) as file:
+            data = csv.DictReader(file)
+            self._CABLE_SIZE = data
 
