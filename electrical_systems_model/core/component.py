@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+from core.power import ThreePhase
+
 
 class Component:
 
@@ -9,7 +11,7 @@ class Component:
         self._children = None
         self._index = 0
         self.power_in = None
-        self.power_out = None
+        self.power_out = ThreePhase(0, 120, 60, 1)
         self.name = ""
 
     def get_parents(self):

@@ -1,17 +1,29 @@
+import copy
+
 import numpy
-from abc import abstractmethod
 
 
 class Power:
     def __init__(self, power):
         self.power = power
 
-    @abstractmethod
     def add(self, power):
+        # TODO: figure out how to add powers of different voltages / frequencies
+        # currently we're just going to cast with matching voltage and power
+        # this may break Transformer behavior
+        # self = type(power).cast(self)
         pass
 
     def efficiency_loss(self, efficiency):
         self.power = self.power / efficiency
+
+    def copy(self):
+        return copy.copy(self)
+
+    # @classmethod
+    # def cast(cls, power_object):
+    #     power_object.__class__ = cls
+    #     return power_object
 
 
 class ElectricPower(Power):
@@ -21,6 +33,7 @@ class ElectricPower(Power):
         self.current = None
 
     def add(self, power):
+        super().add(power)
         self.power = self.power + power.power
 
     def resistance_loss(self, resistance):
@@ -28,11 +41,10 @@ class ElectricPower(Power):
         self.power = self.power + power_loss
 
 
-
 class AlternatingCurrent(ElectricPower):
     def __init__(self, power, voltage, frequency, power_factor=1):
         super().__init__(power, voltage)
-        self.power = complex(power, 0)
+        self.power = complex(self.power, 0)
         self.frequency = frequency
         self.power_factor = power_factor
 
