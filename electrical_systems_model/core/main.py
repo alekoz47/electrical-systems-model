@@ -46,21 +46,20 @@ def main():
     # print("Test 3 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
     # model.print_tree()
 
-    print("Cable 1 current: " + str("%.1f" % cable1.power_in.current) + " A")
-    print("Cable 2 current: " + str("%.1f" % cable2.power_in.current) + " A")
-    print("Cable 1 voltage: " + str("%.1f" % cable1.power_in.voltage) + " V")
-    print("Cable 2 voltage: " + str("%.1f" % cable2.power_in.voltage) + " V")
-    print("Cable 1 power: " + str("%.1f" % abs(cable1.power_out.power - cable1.power_in.power)) + " W")
-    print("Cable 2 power: " + str("%.1f" % abs(cable2.power_out.power - cable2.power_in.power)) + " W")
+    print_component_info(cable1)
+    print_component_info(transformer)
+    print_component_info(cable2)
+    print_component_info(motor)
 
 
 def print_component_info(comp):
     print(comp.name)
     print("Power in: " + str("%.1f" % abs(comp.power_in.power)) + " W")
-    print("Power out: " + str("%.1f" % abs(comp.power_out.power)) + " W")
-    print("Power drop: " + str("%.1f" % abs(comp.power_out.power - comp.power_in.power)) + " W")
+    # print("Power out: " + str("%.1f" % abs(comp.power_out.power)) + " W")
+    # print("Power drop: " + str("%.1f" % abs(comp.power_out.power - comp.power_in.power)) + " W")
     print("Voltage: " + str("%.1f" % abs(comp.power_in.voltage)) + " V")
     print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
+    print(" \n")
 
 
 if __name__ == "__main__":
