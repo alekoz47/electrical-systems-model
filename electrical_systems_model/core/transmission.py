@@ -88,7 +88,7 @@ class Cable(Transmission):
                 print("Current is very high in " + self.name)
             else:
                 num_conductors += 1
-
+        num_conductors -= 1  # subtract one for now
         self.resistance = num_conductors * float(self._CABLE_SIZE[selected_size_index]['resistance']) * length
         self.weight = num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
 

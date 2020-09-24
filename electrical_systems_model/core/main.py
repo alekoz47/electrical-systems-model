@@ -47,8 +47,10 @@ def main():
     # model.print_tree()
 
     print_component_info(cable1)
+    print("Resistance: " + str(cable1.resistance))
     print_component_info(transformer)
     print_component_info(cable2)
+    print("Resistance: " + str(cable2.resistance))
     print_component_info(motor)
 
 
