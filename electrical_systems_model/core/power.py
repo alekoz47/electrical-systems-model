@@ -74,6 +74,10 @@ class ThreePhase(AlternatingCurrent):
         super().add(power)
         self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
+    def resistance_loss(self, resistance):
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
+        super().resistance_loss(resistance)
+
 
 class DirectCurrent(ElectricPower):
     def __init__(self, power, voltage):
