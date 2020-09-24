@@ -69,11 +69,8 @@ class Model:
                 children = [self._sink_tree.get_node(index).data for index in children_indices]
                 comp.set_children(children)
 
-                # TODO: fix parents
-                # this isn't necessary for the current use case but might be useful later
-                # parent_id = self._sink_tree.parent(comp.get_index())
-                # parent = self._sink_tree.get_node(parent_id).data
-                # comp.set_parents(parent)
+                parent = self._sink_tree.parent(comp.get_index()).data
+                comp.set_parents(parent)
 
     def reset_components(self):
         # TODO: implement a method to reset all component power_in and power_out attributes appropriately
