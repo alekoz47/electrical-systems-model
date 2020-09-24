@@ -63,6 +63,13 @@ def print_component_info(comp):
     print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
     print(" \n")
 
+PARENT = Transformer([100, 12, 20], 440)
+CHILD = ElectricalSink([125, 3, 5], 10000, 220)
+CABLE = Cable([0, 0, 0])
+CABLE.set_parents(PARENT)
+CABLE.set_children([CHILD])
+CABLE.get_power_in()
+print('Test Cable Power: '+ str(CABLE.power_in.power))
 
 if __name__ == "__main__":
     main()

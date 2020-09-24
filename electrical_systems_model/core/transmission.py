@@ -59,7 +59,8 @@ class Cable(Transmission):
         # if self.flag = 0:
         #     self.load_data()
         #     flag = 1
-        self.weight = None  #TODO Move to parent class????
+        self.weight = 0  #TODO Move to parent class????
+        self.length = 0
         if not bool(self._CABLE_SIZE):
             self.load_data()
 
@@ -79,25 +80,24 @@ class Cable(Transmission):
                 self._CABLE_SIZE.append(line)
 
     def set_cable_size(self):
-        num_conductors = 1
+        self.num_conductors = 1
         selected_size_index = -1
-        length = 10  # TODO Test length of 10m, code length finder
 
         while selected_size_index == -1:
-            selected_size_index = self.find_cable_size(num_conductors)
-            if num_conductors > 50:
+            selected_size_index = self.find_cable_size()
+            if self.num_conductors > 50:
                 print("Current is very high in " + self.name)
             else:
-                num_conductors += 1
-        num_conductors -= 1  # subtract one for now
-        print(num_conductors)
-        self.resistance = float(self._CABLE_SIZE[selected_size_index]['resistance']) * length / num_conductors  # Check EE
-        self.weight = num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
+                self.num_conductors += 1
+        self.num_conductors -= 1  # subtract one for now
+        print(self.num_conductors)
+        self.resistance = float(self._CABLE_SIZE[selected_size_index]['resistance']) * self.length / self.num_conductors  # Check EE
+        self.weight = self.num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
 
-    def find_cable_size(self, num_conductors):
-        num_conductors = num_conductors
+    def find_cable_size(self):
         for index, cable_size in enumerate(self._CABLE_SIZE):
-            if float(cable_size['XLPE']) > self.power_out.current / num_conductors:
+            self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) * self.length / self.num_conductors) / self.power_out.voltage
+            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
                 selected_size_index = index
                 #
                 return selected_size_index
@@ -118,7 +118,7 @@ class Cable(Transmission):
         vert_distance = end_location[2] - start_location[2]
 
         # This find the total length of cable needed
-        length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
-        print(length)
+        self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
+        print(self.length)
 
 
