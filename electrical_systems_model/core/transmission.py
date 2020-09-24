@@ -77,11 +77,10 @@ class Cable(Transmission):
             for line in data:
                 self._CABLE_SIZE.append(line)
 
-
     def set_cable_size(self):
         num_conductors = 1
         selected_size_index = -1
-        length = 10  # Test length of 10m
+        length = 10  # TODO Test length of 10m, code length finder
 
         while selected_size_index == -1:
             selected_size_index = self.find_cable_size(num_conductors)
@@ -92,9 +91,6 @@ class Cable(Transmission):
 
         self.resistance = num_conductors * float(self._CABLE_SIZE[selected_size_index]['resistance']) * length
         self.weight = num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
-
-
-
 
     def find_cable_size(self, num_conductors):
         num_conductors = num_conductors
