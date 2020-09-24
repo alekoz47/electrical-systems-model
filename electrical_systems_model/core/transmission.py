@@ -66,6 +66,7 @@ class Cable(Transmission):
     def get_power_in(self):
         super().get_power_in()
         self.power_in = self.power_out.copy()
+        self.set_distance()
         self.set_cable_size()
         self.power_in.resistance_loss(self.resistance)
         return self.power_in
@@ -101,5 +102,23 @@ class Cable(Transmission):
                 #
                 return selected_size_index
         return -1
+
+    def set_distance(self):
+        start_location = self.get_parents().location
+        end_location = self.get_children()[0].location
+
+        # This finds the longitudinal distance in meters between the parent and child of the cable
+        long_distance = end_location[0] - start_location[0]
+
+        # This find the transverse length of cable in meters assuming the
+        # cable will run from the child and parent all the way to centerline before running longitudinally
+        tran_distance = abs(end_location[1]) + abs(start_location[1])
+
+        # This finds the longitudinal distance in meters between the parent and child of the cable
+        vert_distance = end_location[2] - start_location[2]
+
+        # This find the total length of cable needed
+        length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
+        print(length)
 
 

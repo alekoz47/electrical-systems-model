@@ -14,9 +14,9 @@ def main():
 
     # straight hierarchy test
     cable1 = Cable([0, 0, 0])
-    transformer = Transformer([0, 0, 0], 440)
+    transformer = Transformer([100, 12, 20], 440)
     cable2 = Cable([0, 0, 0])
-    motor = ElectricalSink([0, 0, 0], 1000000, 220)
+    motor = ElectricalSink([125, 3, 5], 10000, 220)
     components = [cable1, transformer, cable2, motor]
     cable1.name = "Cable 1"
     cable2.name = "Cable 2"
@@ -68,10 +68,11 @@ if __name__ == "__main__":
     main()
 
 
-test = Cable([0,0,0])
-# print(test._CABLE_SIZE)
-
-print(test._CABLE_SIZE[0]['area'])
+# test = Cable([0,0,0])
+# # print(test._CABLE_SIZE)
+#
+# print(test._CABLE_SIZE[0]['area'])
 
 # for i, v in enumerate(test._CABLE_SIZE):
 #     print(i, v['area'])
+
