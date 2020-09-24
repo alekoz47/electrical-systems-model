@@ -68,11 +68,11 @@ class SinglePhase(AlternatingCurrent):
 class ThreePhase(AlternatingCurrent):
     def __init__(self, power, voltage, frequency, power_factor):
         super().__init__(power, voltage, frequency, power_factor)
-        self.current = numpy.sqrt(3) * abs(self.power) / self.voltage
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
     def add(self, power):
         super().add(power)
-        self.current = numpy.sqrt(3) * abs(self.power) / self.voltage
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
 
 class DirectCurrent(ElectricPower):

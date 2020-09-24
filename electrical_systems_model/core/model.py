@@ -21,6 +21,8 @@ class Model:
         # TODO: decide on linking between sink and source roots
         # TODO: implement smarter Power setting at sources
 
+        # self.reset_components()
+
         # get root component and update its children
         root_comp = self._sink_tree.get_node(self._sink_tree.root).data
         root_comp.name = "Root"
@@ -32,24 +34,14 @@ class Model:
         root_power = root_comp.get_power_in()
         return root_power
 
-    def import_data(self, filepath):
-        # TODO: add read-in from CSV file
-        # this is an initial test of
-        #   Root -> Line -> Switchboard -> Line -> Motor
+    def import_components(self, components):
+        self.initialize_tree(components)
 
-        # create components
-        line1 = Cable([0, 0, 0])
-        transformer = Transformer([0, 0, 0], 440)
-        line2 = Cable([0, 0, 0])
-        motor = ElectricalSink([0, 0, 0], 10, 220)
-        components = [line1, transformer, line2, motor]
+    def import_epla(self, filepath):
+        # self.initialize_tree(components)
+        pass
 
-        # name components
-        line1.name = "Cable 1"
-        line2.name = "Cable 2"
-        transformer.name = "Transformer"
-        motor.name = "Motor"
-
+    def initialize_tree(self, components):
         # populate trees
         # right now, just connects components in order in a straight line
         # TODO: replace this loop with logic for populating OLD
@@ -58,6 +50,13 @@ class Model:
                 self.add_source(comp, self._source_index)
             else:
                 self.add_sink(comp, self._sink_index)
+
+        self.update_dependencies(components)
+
+    def update_dependencies(self, components):
+        # TODO: remove this
+        # this is a hasty fix for a more specific problem that every time we update the tree we need
+        # to update each component
 
         # assign parents/children to components
         # this assigns a pointer for each parent and child to each component
@@ -76,10 +75,17 @@ class Model:
                 # parent = self._sink_tree.get_node(parent_id).data
                 # comp.set_parents(parent)
 
+    def reset_components(self):
+        # TODO: implement a method to reset all component power_in and power_out attributes appropriately
+        components = [node.data for node in self._sink_tree.all_nodes()]
+        for comp in components:
+            pass
+
     def add_sink(self, new_sink, parent):
         self._sink_index += 1  # index starts at 1
         self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent, data=new_sink)
         new_sink.set_index(self._sink_index)
+        self.update_dependencies([new_sink])
 
     def add_source(self, new_source, parent):
         self._source_list.append(new_source)
