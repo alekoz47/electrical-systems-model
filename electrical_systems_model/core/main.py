@@ -16,7 +16,7 @@ def main():
     cable1 = Cable([0, 0, 0])
     transformer = Transformer([0, 0, 0], 440)
     cable2 = Cable([0, 0, 0])
-    motor = ElectricalSink([0, 0, 0], 10000, 220)
+    motor = ElectricalSink([0, 0, 0], 1000000, 220)
     components = [cable1, transformer, cable2, motor]
     cable1.name = "Cable 1"
     cable2.name = "Cable 2"

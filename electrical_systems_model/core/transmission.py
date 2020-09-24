@@ -89,7 +89,8 @@ class Cable(Transmission):
             else:
                 num_conductors += 1
         num_conductors -= 1  # subtract one for now
-        self.resistance = num_conductors * float(self._CABLE_SIZE[selected_size_index]['resistance']) * length
+        print(num_conductors)
+        self.resistance = float(self._CABLE_SIZE[selected_size_index]['resistance']) * length / num_conductors  # Check EE
         self.weight = num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
 
     def find_cable_size(self, num_conductors):
