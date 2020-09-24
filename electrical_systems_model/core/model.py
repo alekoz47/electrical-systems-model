@@ -49,7 +49,7 @@ class Model:
             if isinstance(comp, Source):
                 self.add_source(comp, self._source_index)
             else:
-                self.add_sink(comp, self._sink_index)
+                self.add_sink_from_index(comp, self._sink_index)
 
         self.update_dependencies(components)
 
@@ -62,13 +62,12 @@ class Model:
         # this assigns a pointer for each parent and child to each component
         # allowing us to recurse through all the children from the root
         for comp in components:
-            if isinstance(comp, Source):
-                pass
+            children_indices = self._sink_tree.is_branch(comp.get_index())
+            children = [self._sink_tree.get_node(index).data for index in children_indices]
+            comp.set_children(children)
+            if isinstance(comp, Root):
+                comp.set_parents(None)
             else:
-                children_indices = self._sink_tree.is_branch(comp.get_index())
-                children = [self._sink_tree.get_node(index).data for index in children_indices]
-                comp.set_children(children)
-
                 parent = self._sink_tree.parent(comp.get_index()).data
                 comp.set_parents(parent)
 
@@ -76,11 +75,19 @@ class Model:
         # TODO: implement a method to reset all component power_in and power_out attributes appropriately
         components = [node.data for node in self._sink_tree.all_nodes()]
         for comp in components:
-            pass
+            comp.reset()
+        self.update_dependencies(components)
 
     def add_sink(self, new_sink, parent):
         self._sink_index += 1  # index starts at 1
-        self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent, data=new_sink)
+        parent_index = parent.get_index()
+        self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent_index, data=new_sink)
+        new_sink.set_index(self._sink_index)
+        self.update_dependencies([new_sink])
+
+    def add_sink_from_index(self, new_sink, parent_index):
+        self._sink_index += 1  # index starts at 1
+        self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent_index, data=new_sink)
         new_sink.set_index(self._sink_index)
         self.update_dependencies([new_sink])
 
