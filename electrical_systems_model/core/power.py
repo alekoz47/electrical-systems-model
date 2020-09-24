@@ -44,7 +44,9 @@ class ElectricPower(Power):
 class AlternatingCurrent(ElectricPower):
     def __init__(self, power, voltage, frequency, power_factor=1):
         super().__init__(power, voltage)
-        self.power = complex(self.power, 0)
+        real_power = power * power_factor
+        imag_power = numpy.sqrt(power**2 - real_power**2)
+        self.power = complex(real_power, imag_power)
         self.frequency = frequency
         self.power_factor = power_factor
 
@@ -56,21 +58,21 @@ class AlternatingCurrent(ElectricPower):
 class SinglePhase(AlternatingCurrent):
     def __init__(self, power, voltage, frequency, power_factor):
         super().__init__(power, voltage, frequency, power_factor)
-        self.current = self.power_factor * self.power / self.voltage
+        self.current = abs(self.power) / self.voltage
 
     def add(self, power):
         super().add(power)
-        self.current = self.power_factor * self.power / self.voltage
+        self.current = abs(self.power) / self.voltage
 
 
 class ThreePhase(AlternatingCurrent):
     def __init__(self, power, voltage, frequency, power_factor):
         super().__init__(power, voltage, frequency, power_factor)
-        self.current = numpy.sqrt(3) * self.power_factor * self.power / self.voltage
+        self.current = numpy.sqrt(3) * abs(self.power) / self.voltage
 
     def add(self, power):
         super().add(power)
-        self.current = numpy.sqrt(3) * self.power_factor * self.power / self.voltage
+        self.current = numpy.sqrt(3) * abs(self.power) / self.voltage
 
 
 class DirectCurrent(ElectricPower):
