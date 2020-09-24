@@ -35,3 +35,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+test = Cable([0,0,0])
+# print(test._CABLE_SIZE)
+
+print(test._CABLE_SIZE[0]['area'])
+
+# for i, v in enumerate(test._CABLE_SIZE):
+#     print(i, v['area'])
