@@ -43,5 +43,11 @@ class Component:
     def set_children(self, children):
         self._children = children
 
+    def reset(self):
+        self.power_in = None
+        self.power_out = None
+        self._children = None
+        self._parents = None
+
     def set_index(self, index):
         self._index = index
