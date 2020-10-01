@@ -90,7 +90,6 @@ class Cable(Transmission):
             else:
                 self.num_conductors += 1
         self.num_conductors -= 1  # subtract one for now
-        print(self.num_conductors)
         self.resistance = float(self._CABLE_SIZE[selected_size_index]['resistance']) * self.length / self.num_conductors  # Check EE
         self.weight = self.num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
 
@@ -119,6 +118,5 @@ class Cable(Transmission):
 
         # This find the total length of cable needed
         self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
-        print(self.length)
 
 
