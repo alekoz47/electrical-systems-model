@@ -19,9 +19,8 @@ class Model:
 
     def solve_model(self):
         # TODO: decide on linking between sink and source roots
-        # TODO: implement smarter Power setting at sources
 
-        # self.reset_components()
+        self.reset_components()
 
         # get root component and update its children
         root_comp = self._sink_tree.get_node(self._sink_tree.root).data
@@ -72,7 +71,6 @@ class Model:
                 comp.set_parents(parent)
 
     def reset_components(self):
-        # TODO: implement a method to reset all component power_in and power_out attributes appropriately
         components = [node.data for node in self._sink_tree.all_nodes()]
         for comp in components:
             comp.reset()
@@ -108,6 +106,9 @@ class Model:
 
     def print_tree(self):
         self._sink_tree.show()
+
+    def export_old(self, filepath):
+        pass
 
     def copy(self):
         return copy.copy(self)

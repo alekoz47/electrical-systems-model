@@ -32,8 +32,9 @@ class Component:
         # children of different voltages should be split by a transformer and panel
         # default_power acts as an accumulator
         default_power = self._children[0].get_power_in()
-        for ii in range(1, len(self._children) - 1):
-            default_power.add(self._children[ii].get_power_in())
+        default_power.power = 0
+        for child in self._children:
+            default_power.add(child.get_power_in())
         self.power_out = default_power
         return self.power_out
 

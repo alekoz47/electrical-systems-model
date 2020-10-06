@@ -23,31 +23,19 @@ def main():
     transformer.name = "Transformer"
     motor.name = "Motor"
     model = Model()
-    model.import_components(components)  # right now this just adds components in a straight hierarchy
+    model.import_components(components)  # right now this just adds components in a straight hierarchy\
     print("Test 1 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
     model.print_tree()
 
-    model.reset_components()
-
     # test adding some components and resolving
-    motor2 = ElectricalSink([0, 0, 0], 10000, 220, 0.8)
+    # we've added call to reset inside solve method to clear up old data
+    motor2 = ElectricalSink([125, 3, 5], 10000, 220, 0.8)
     motor2.name = "Motor 2"
     cable3 = Cable([0, 0, 0])
     cable3.name = "Cable 3"
     model.add_sink(cable3, transformer)
     model.add_sink(motor2, cable3)
     print("Test 2 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
-    model.print_tree()
-
-    model.reset_components()
-
-    motor3 = ElectricalSink([0, 0, 0], 10000, 220, 0.8)
-    motor3.name = "Motor 3"
-    cable4 = Cable([0, 0, 0])
-    cable4.name = "Cable 4"
-    model.add_sink(cable4, transformer)
-    model.add_sink(motor3, cable4)
-    print("Test 3 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
     model.print_tree()
 
     print_component_info(cable1)
