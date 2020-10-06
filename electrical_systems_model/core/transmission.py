@@ -1,5 +1,6 @@
 from core.component import Component
 from core.power import ThreePhase
+from core.power import DirectCurrent
 import csv
 
 
@@ -33,13 +34,14 @@ class Transformer(Transmission):
 
 class Panel(Transmission):
 
-    def __init__(self, location, efficiency=0.97):
+    def __init__(self, location, efficiency=1):
         super().__init__(location)
         self.efficiency = efficiency
 
     def get_power_in(self):
         super().get_power_in()
         voltage_level_in = 0
+        # TODO Actually make this correct
         self.power_out = ThreePhase(1, 2, 3, 4)  # for testing purposes
         self.power_in = ThreePhase(self.power_out.power / self.efficiency,
                                    voltage_level_in,
@@ -95,7 +97,8 @@ class Cable(Transmission):
 
     def find_cable_size(self):
         for index, cable_size in enumerate(self._CABLE_SIZE):
-            self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) * self.length / self.num_conductors) / self.power_out.voltage
+            self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) *
+            self.length / self.num_conductors) / self.power_out.voltage
             if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
                 selected_size_index = index
                 #
@@ -118,5 +121,28 @@ class Cable(Transmission):
 
         # This find the total length of cable needed
         self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
+
+class VFD(Transmission):
+    def __init__(self, location, efficiency=0.9):
+        super().__init__(location)
+        self.efficiency = efficiency
+
+    def get_power_in(self):
+        super().get_power_in()
+        self.power_in = self.power_out.copy()
+        self.power_in.efficiency_loss(self.efficiency)
+        return self.power_in
+
+class Inverter(Transmission):
+    def __init__(self, location, efficiency=0.9):
+        super().__init__(location)
+        self.efficiency = efficiency
+
+    def get_power_in(self):
+        super().get_power_in()
+        self.power_in = DirectCurrent(self.power_out.power, self.power_out.voltage)
+        self.power_in.efficiency_loss(self.efficiency)
+        return self.power_in
+
 
 
