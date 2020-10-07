@@ -17,8 +17,17 @@ class Model:
         self._sink_tree = tree.Tree()
         self._sink_tree.create_node("Root", 0, None, Root([0, 0, 0]))
 
-    def solve_model(self):
+
+    def solve_model(self, load_cases):
+        root_powers = list()
+        for load_case in load_cases:
+            root_powers.append(self.solve_model_case(load_cases.index(load_case)))
+        return root_powers
+
+
+    def solve_model_case(self,load_case_num):
         # TODO: decide on linking between sink and source roots
+        self.load_case_num = load_case_num
 
         self.reset_components()
 
@@ -30,7 +39,7 @@ class Model:
         root_comp.set_children(children)
 
         # solve root -> solve tree
-        root_power = root_comp.get_power_in()
+        root_power = root_comp.get_power_in(self.load_case_num)
         return root_power
 
     def import_components(self, components):
@@ -134,5 +143,5 @@ class Root(Component):
     def __init__(self, location):
         super().__init__(location)
 
-    def get_power_in(self):
-        return self.get_power_out()
+    def get_power_in(self, load_case_num):
+        return self.get_power_out(load_case_num)

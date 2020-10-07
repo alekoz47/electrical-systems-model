@@ -9,8 +9,8 @@ class Transmission(Component):
     def __init__(self, location):
         super().__init__(location)
 
-    def get_power_in(self):
-        self.power_out = self.get_power_out()
+    def get_power_in(self, load_case_num):
+        self.power_out = self.get_power_out(load_case_num)
         self.power_in = self.power_out.copy()
         return self.power_in
 
@@ -23,8 +23,8 @@ class Transformer(Transmission):
         self.voltage_out = 0  # so we can track voltage_out in get_power_in
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.voltage_out = self.power_out.voltage
         self.power_in = self.power_out.copy()
         self.power_in.efficiency_loss(self.efficiency)
@@ -38,8 +38,8 @@ class Panel(Transmission):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         voltage_level_in = 0
         # TODO Actually make this correct
         self.power_out = ThreePhase(1, 2, 3, 4)  # for testing purposes
@@ -66,11 +66,14 @@ class Cable(Transmission):
         if not bool(self._CABLE_SIZE):
             self.load_data()
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
-        self.set_distance()
-        self.set_cable_size()
+        print(load_case_num)
+        if load_case_num == 0:
+            print("solved cable: " + str(self.name))
+            self.set_distance()
+            self.set_cable_size()
         self.power_in.resistance_loss(self.resistance)
         return self.power_in
 
@@ -147,8 +150,8 @@ class VFD(Transmission):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
         self.power_in.efficiency_loss(self.efficiency)
         return self.power_in
@@ -158,8 +161,8 @@ class Inverter(Transmission):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = DirectCurrent(self.power_out.power, self.power_out.voltage)
         self.power_in.efficiency_loss(self.efficiency)
         return self.power_in

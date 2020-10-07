@@ -16,7 +16,7 @@ def main():
     cable1 = Cable([0, 0, 0])
     transformer = Transformer([100, 12, 20], 440)
     cable2 = Cable([0, 0, 0])
-    motor = ElectricalSink([125, 3, 5], 10000, 220)
+    motor = ElectricalSink([125, 3, 5], 10000, [1,0.5,0], 220)
     components = [cable1, transformer, cable2, motor]
     cable1.name = "Cable 1"
     cable2.name = "Cable 2"
@@ -24,18 +24,20 @@ def main():
     motor.name = "Motor"
     model = Model()
     model.import_components(components)  # right now this just adds components in a straight hierarchy\
-    print("Test 1 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
+    root_powers = model.solve_model(['Connected', 'At Sea'])
+    print("Test 1 Power Output, Connected: " + str("%.1f" % abs(root_powers[0].power) + " W"))
+    print("Test 1 Power Output, At Sea: " + str("%.1f" % abs(root_powers[1].power) + " W"))
     model.print_tree()
 
     # test adding some components and resolving
     # we've added call to reset inside solve method to clear up old data
-    motor2 = ElectricalSink([125, 3, 5], 10000, 220, 0.8)
+    motor2 = ElectricalSink([125, 3, 5], 10000,[1,0.5,0], 220, 0.8)
     motor2.name = "Motor 2"
     cable3 = Cable([0, 0, 0])
     cable3.name = "Cable 3"
     model.add_sink(cable3, transformer)
     model.add_sink(motor2, cable3)
-    print("Test 2 Power Output: " + str("%.1f" % abs(model.solve_model().power)) + " W")
+    print("Test 2 Power Output: " + str("%.1f" % abs(model.solve_model_case(0).power)) + " W")
     model.print_tree()
 
     print_component_info(cable1)
@@ -60,13 +62,13 @@ def print_component_info(comp):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
     print(" \n")
 
-PARENT = Transformer([100, 12, 20], 440)
-CHILD = ElectricalSink([125, 3, 5], 10000, 220)
-CABLE = Cable([0, 0, 0])
-CABLE.set_parents(PARENT)
-CABLE.set_children([CHILD])
-CABLE.get_power_in()
-print('Test Cable Power: '+ str(CABLE.power_in.power))
+# PARENT = Transformer([100, 12, 20], 440)
+# CHILD = ElectricalSink([125, 3, 5], 10000,[1,0.5,0], 220)
+# CABLE = Cable([0, 0, 0])
+# CABLE.set_parents(PARENT)
+# CABLE.set_children([CHILD])
+# CABLE.get_power_in()
+# print('Test Cable Power: '+ str(CABLE.power_in.power))
 
 if __name__ == "__main__":
     main()
@@ -79,4 +81,8 @@ if __name__ == "__main__":
 
 # for i, v in enumerate(test._CABLE_SIZE):
 #     print(i, v['area'])
+
+cases = ["Connected", "Maneuver", "At Sea"]
+for case in cases:
+    print(cases.index(case))
 
