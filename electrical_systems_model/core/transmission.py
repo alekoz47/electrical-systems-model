@@ -92,8 +92,28 @@ class Cable(Transmission):
             else:
                 self.num_conductors += 1
         self.num_conductors -= 1  # subtract one for now
-        self.resistance = float(self._CABLE_SIZE[selected_size_index]['resistance']) * self.length / self.num_conductors  # Check EE
-        self.weight = self.num_conductors * float(self._CABLE_SIZE[selected_size_index]['weight'])
+
+        # This section calculates the resistance per m using the cross sectional area of the conductors
+        resistivity_copper_20C = 1.724 * 10**(-8)  # Ohm*m TODO Find source for resistivity
+        resistivity_temp = 20  # degree C
+        rated_temp = 85  # degree C
+        alpha_temp_coef = 0.00429  # TODO Find source for Alpha
+        resistivity_copper_rated_temp = resistivity_copper_20C * (1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
+        resistance_per_meter = resistivity_copper_rated_temp / (float(self._CABLE_SIZE[selected_size_index]['area']) / (1000**2))  # Ohm/m
+
+        self.resistance = resistance_per_meter * self.length / self.num_conductors  # Check EE
+
+        # TODO write if statement to determine if cable three phase or single phase/DC and do weight correctly
+        # This section finds the linear weight of the selected cable on a per core basis
+        density_of_copper = 8.95  # mt/m^3
+        linear_weight = density_of_copper * float(self._CABLE_SIZE[selected_size_index]['area']) / (1000**2)
+
+        if isinstance(self.power_in, ThreePhase):
+            number_of_core = 3
+            self.weight = self.num_conductors * number_of_core * linear_weight
+        elif isinstance(self.power_in, DirectCurrent):
+            number_of_core = 1
+            self.weight = self.num_conductors * number_of_core * linear_weight
 
     def find_cable_size(self):
         for index, cable_size in enumerate(self._CABLE_SIZE):
