@@ -13,6 +13,7 @@ class Component:
         self.power_in = None
         self.power_out = None
         self.name = ""
+        self.load_case_num = 0
 
     def get_parents(self):
         return self._parents
@@ -24,17 +25,18 @@ class Component:
         return self._index
 
     @abstractmethod
-    def get_power_in(self):
+    def get_power_in(self, load_case_num):
+        self.load_case_num = load_case_num
         pass
 
-    def get_power_out(self):
+    def get_power_out(self, load_case_num):
         # this assumes the children all share voltage and frequency
         # children of different voltages should be split by a transformer and panel
         # default_power acts as an accumulator
-        default_power = self._children[0].get_power_in()
+        default_power = self._children[0].get_power_in(load_case_num)
         default_power.power = 0
         for child in self._children:
-            default_power.add(child.get_power_in())
+            default_power.add(child.get_power_in(load_case_num))
         self.power_out = default_power
         return self.power_out
 

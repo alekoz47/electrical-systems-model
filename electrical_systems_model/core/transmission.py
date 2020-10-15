@@ -9,8 +9,8 @@ class Transmission(Component):
     def __init__(self, location):
         super().__init__(location)
 
-    def get_power_in(self):
-        self.power_out = self.get_power_out()
+    def get_power_in(self, load_case_num):
+        self.power_out = self.get_power_out(load_case_num)
         self.power_in = self.power_out.copy()
         return self.power_in
 
@@ -23,8 +23,8 @@ class Transformer(Transmission):
         self.voltage_out = 0  # so we can track voltage_out in get_power_in
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.voltage_out = self.power_out.voltage
         self.power_in = self.power_out.copy()
         self.power_in.efficiency_loss(self.efficiency)
@@ -38,8 +38,8 @@ class Panel(Transmission):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         voltage_level_in = 0
         # TODO Actually make this correct
         self.power_out = ThreePhase(1, 2, 3, 4)  # for testing purposes
@@ -61,16 +61,19 @@ class Cable(Transmission):
         # if self.flag = 0:
         #     self.load_data()
         #     flag = 1
-        self.weight = 0  #TODO Move to parent class????
+        self.weight = 0  # TODO Move to parent class????
         self.length = 0
+        self.num_conductors = 0  # so we know it hasn't been calculated yet
+        self.voltage_drop_percent = 0
         if not bool(self._CABLE_SIZE):
             self.load_data()
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
-        self.set_distance()
-        self.set_cable_size()
+        if load_case_num == 0:
+            self.set_distance()
+            self.set_cable_size()
         self.power_in.resistance_loss(self.resistance)
         return self.power_in
 
@@ -91,22 +94,25 @@ class Cable(Transmission):
                 print("Current is very high in " + self.name)
             else:
                 self.num_conductors += 1
-        self.num_conductors -= 1  # subtract one for now
+        self.num_conductors -= 1  # subtract 1 for now -> yields correct answer
+        # this while loop could be rewritten for better practices and readability
 
         # This section calculates the resistance per m using the cross sectional area of the conductors
-        resistivity_copper_20C = 1.724 * 10**(-8)  # Ohm*m TODO Find source for resistivity
-        resistivity_temp = 20  # degree C
+        resistivity_copper = 1.724 * 10 ** (-8)  # Ohm*m TODO: Find source for resistivity
+        core_temp = 20  # degree C
         rated_temp = 85  # degree C
-        alpha_temp_coef = 0.00429  # TODO Find source for Alpha
-        resistivity_copper_rated_temp = resistivity_copper_20C * (1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
-        resistance_per_meter = resistivity_copper_rated_temp / (float(self._CABLE_SIZE[selected_size_index]['area']) / (1000**2))  # Ohm/m
+        alpha_temp_coeff = 0.00429  # TODO: Find source for Alpha
+        resistivity_copper_rated_temp = resistivity_copper * (
+                1 + alpha_temp_coeff * (rated_temp - core_temp))  # Ohm*m
+        resistance_per_meter = resistivity_copper_rated_temp / (
+                float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
 
         self.resistance = resistance_per_meter * self.length / self.num_conductors  # Check EE
 
-        # TODO write if statement to determine if cable three phase or single phase/DC and do weight correctly
+        # TODO: write if statement to determine if cable three phase or single phase/DC and do weight correctly
         # This section finds the linear weight of the selected cable on a per core basis
         density_of_copper = 8.95  # mt/m^3
-        linear_weight = density_of_copper * float(self._CABLE_SIZE[selected_size_index]['area']) / (1000**2)
+        linear_weight = density_of_copper * float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2)
 
         if isinstance(self.power_in, ThreePhase):
             number_of_core = 3
@@ -118,10 +124,10 @@ class Cable(Transmission):
     def find_cable_size(self):
         for index, cable_size in enumerate(self._CABLE_SIZE):
             self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) *
-            self.length / self.num_conductors) / self.power_out.voltage
-            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
+                                         self.length / self.num_conductors) / self.power_out.voltage
+            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and \
+                    self.voltage_drop_percent <= 0.3:
                 selected_size_index = index
-                #
                 return selected_size_index
         return -1
 
@@ -139,30 +145,29 @@ class Cable(Transmission):
         # This finds the longitudinal distance in meters between the parent and child of the cable
         vert_distance = end_location[2] - start_location[2]
 
-        # This find the total length of cable needed
+        # This sets the total length of cable needed
         self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
+
 
 class VFD(Transmission):
     def __init__(self, location, efficiency=0.9):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
         self.power_in.efficiency_loss(self.efficiency)
         return self.power_in
+
 
 class Inverter(Transmission):
     def __init__(self, location, efficiency=0.9):
         super().__init__(location)
         self.efficiency = efficiency
 
-    def get_power_in(self):
-        super().get_power_in()
+    def get_power_in(self, load_case_num):
+        super().get_power_in(load_case_num)
         self.power_in = DirectCurrent(self.power_out.power, self.power_out.voltage)
         self.power_in.efficiency_loss(self.efficiency)
         return self.power_in
-
-
-
