@@ -2,10 +2,10 @@ import copy
 
 import treelib as tree
 
-from core.sink import Sink, ElectricalSink
 from core.source import Source
-from core.transmission import Cable, Transformer
+from core.transmission import Cable
 from core.component import Component
+from helpers.tree_utils import get_tree_edges, link_into_edge
 
 
 class Model:
@@ -46,7 +46,7 @@ class Model:
         # TODO: replace this loop with logic for populating OLD
         for comp in components:
             if isinstance(comp, Source):
-                self.add_source(comp, self._source_index)
+                self.add_source(comp)
             else:
                 self.add_sink_from_index(comp, self._sink_index)
 
@@ -89,7 +89,7 @@ class Model:
         new_sink.set_index(self._sink_index)
         self.update_dependencies([new_sink])
 
-    def add_source(self, new_source, parent):
+    def add_source(self, new_source):
         self._source_list.append(new_source)
         self._source_index += 1
 
@@ -104,6 +104,18 @@ class Model:
         #     print("Error: Source does not exist in list. No source removed.")
         self._source_list.pop(source.get_index())
 
+    def add_cables(self):
+        # add cables in between all component "edges" (sets of two linked components)
+        index = self._sink_tree.size() + 2
+        edges = get_tree_edges(self._sink_tree)
+        for edge in edges:
+            new_node = tree.Node("Cable " + str(self._sink_index),
+                                 self._sink_index,
+                                 data=Cable([0, 0, 0]))
+            index += 1
+            tt = link_into_edge(new_node, edge, self._sink_tree)
+        self.reset_components()
+
     def print_tree(self):
         self._sink_tree.show()
 
@@ -112,21 +124,6 @@ class Model:
 
     def copy(self):
         return copy.copy(self)
-
-        # don't need these now, but could be useful if we want to keep traversal implemented in Model
-        # def _solve_tree(self, comp_tree):
-        #     # traverses tree and
-        #     node_id = 0
-        #     power_out = 0
-        #     power = self._solve_node(comp_tree, node_id, power_out)
-        #     return comp_tree.get_node(0)
-        #
-        # def _solve_node(self, comp_tree, node_id, power_out):
-        #     # solves the given node and returns its input power
-        #     comp = comp_tree.get_node(node_id)
-        #     if not isinstance(comp, Sink):
-        #         comp.power_out = power_out
-        #     return comp.get_power_in()
 
 
 class Root(Component):
