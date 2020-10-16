@@ -5,7 +5,7 @@ import treelib as tree
 from core.source import Source
 from core.transmission import Cable
 from core.component import Component
-from helpers.tree_utils import get_tree_edges, link_into_edge
+from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index
 
 
 class Model:
@@ -57,45 +57,47 @@ class Model:
                 self.add_source(comp)
             else:
                 self.add_sink_from_index(comp, self._sink_index)
+        self.add_cables()
+        self.update_dependencies()
 
-        self.update_dependencies(components)
-
-    def update_dependencies(self, components):
+    def update_dependencies(self):
         # TODO: remove this
         # this is a hasty fix for a more specific problem that every time we update the tree we need
         # to update each component
 
         # assign parents/children to components
-        # this assigns a pointer for each parent and child to each component
+        # this assigns a reference for each parent and child to each component
         # allowing us to recurse through all the children from the root
-        for comp in components:
-            children_indices = self._sink_tree.is_branch(comp.get_index())
+
+        # this may be a slow technique: would be preferable to avoid updating all components every time we run
+        for node in self._sink_tree.all_nodes():
+            children_indices = self._sink_tree.is_branch(node.identifier)
             children = [self._sink_tree.get_node(index).data for index in children_indices]
-            comp.set_children(children)
-            if isinstance(comp, Root):
-                comp.set_parents(None)
+            node.data.set_children(children)
+            if isinstance(node.data, Root):
+                node.data.set_parents(None)
             else:
-                parent = self._sink_tree.parent(comp.get_index()).data
-                comp.set_parents(parent)
+                parent = self._sink_tree.parent(node.identifier).data
+                node.data.set_parents(parent)
 
     def reset_components(self):
         components = [node.data for node in self._sink_tree.all_nodes()]
         for comp in components:
             comp.reset()
-        self.update_dependencies(components)
+        self.update_dependencies()
 
     def add_sink(self, new_sink, parent):
         self._sink_index += 1  # index starts at 1
         parent_index = parent.get_index()
         self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent_index, data=new_sink)
         new_sink.set_index(self._sink_index)
-        self.update_dependencies([new_sink])
+        self.update_dependencies()
 
     def add_sink_from_index(self, new_sink, parent_index):
         self._sink_index += 1  # index starts at 1
         self._sink_tree.create_node(new_sink.name, self._sink_index, parent=parent_index, data=new_sink)
         new_sink.set_index(self._sink_index)
-        self.update_dependencies([new_sink])
+        self.update_dependencies()
 
     def add_source(self, new_source):
         self._source_list.append(new_source)
@@ -114,14 +116,15 @@ class Model:
 
     def add_cables(self):
         # add cables in between all component "edges" (sets of two linked components)
-        index = self._sink_tree.size() + 2
+        cable_index = get_largest_index(self._sink_tree) + 1
         edges = get_tree_edges(self._sink_tree)
         for edge in edges:
-            new_node = tree.Node("Cable " + str(self._sink_index),
-                                 self._sink_index,
+            new_node = tree.Node("Cable " + str(cable_index),
+                                 cable_index,
                                  data=Cable([0, 0, 0]))
-            index += 1
-            tt = link_into_edge(new_node, edge, self._sink_tree)
+            new_node.data.name = "Cable " + str(cable_index)
+            cable_index += 1
+            self._sink_tree = link_into_edge(new_node, edge, self._sink_tree)
         self.reset_components()
 
     def print_tree(self):
@@ -138,6 +141,7 @@ class Root(Component):
 
     def __init__(self, location):
         super().__init__(location)
+        self.name = "Root"
 
     def get_power_in(self, load_case_num):
         return self.get_power_out(load_case_num)

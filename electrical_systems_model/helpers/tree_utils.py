@@ -38,5 +38,14 @@ def link_into_edge(node, edge, tt):
     return tt
 
 
+def get_largest_index(tt):
+    largest_index = 0
+    indices = [node.identifier for node in tt.all_nodes()]
+    for index in indices:
+        if largest_index < index:
+            largest_index = index
+    return largest_index
+
+
 def convert_node_to_tag(node, tt):
     return tt.get_node(node).tag
