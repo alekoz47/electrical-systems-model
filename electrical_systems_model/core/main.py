@@ -62,27 +62,7 @@ def print_component_info(comp):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
     print(" \n")
 
-# PARENT = Transformer([100, 12, 20], 440)
-# CHILD = ElectricalSink([125, 3, 5], 10000,[1,0.5,0], 220)
-# CABLE = Cable([0, 0, 0])
-# CABLE.set_parents(PARENT)
-# CABLE.set_children([CHILD])
-# CABLE.get_power_in()
-# print('Test Cable Power: '+ str(CABLE.power_in.power))
 
 if __name__ == "__main__":
     main()
-
-
-# test = Cable([0,0,0])
-# # print(test._CABLE_SIZE)
-#
-# print(test._CABLE_SIZE[0]['area'])
-
-# for i, v in enumerate(test._CABLE_SIZE):
-#     print(i, v['area'])
-
-cases = ["Connected", "Maneuver", "At Sea"]
-for case in cases:
-    print(cases.index(case))
 

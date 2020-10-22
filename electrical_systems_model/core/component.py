@@ -13,7 +13,7 @@ class Component:
         self.power_in = None
         self.power_out = None
         self.name = ""
-        self.load_case_num = None
+        self.load_case_num = 0
 
     def get_parents(self):
         return self._parents

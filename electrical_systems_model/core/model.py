@@ -2,9 +2,8 @@ import copy
 
 import treelib as tree
 
-from core.sink import Sink, ElectricalSink
 from core.source import Source
-from core.transmission import Cable, Transformer
+from core.transmission import Cable
 from core.component import Component
 
 
@@ -16,7 +15,7 @@ class Model:
         self._source_list = []
         self._sink_tree = tree.Tree()
         self._sink_tree.create_node("Root", 0, None, Root([0, 0, 0]))
-
+        self.load_case_num = 0
 
     def solve_model(self, load_cases):
         root_powers = list()
@@ -24,8 +23,7 @@ class Model:
             root_powers.append(self.solve_model_case(load_cases.index(load_case)))
         return root_powers
 
-
-    def solve_model_case(self,load_case_num):
+    def solve_model_case(self, load_case_num):
         # TODO: decide on linking between sink and source roots
         self.load_case_num = load_case_num
 
@@ -55,7 +53,7 @@ class Model:
         # TODO: replace this loop with logic for populating OLD
         for comp in components:
             if isinstance(comp, Source):
-                self.add_source(comp, self._source_index)
+                self.add_source(comp)
             else:
                 self.add_sink_from_index(comp, self._sink_index)
 
@@ -98,7 +96,7 @@ class Model:
         new_sink.set_index(self._sink_index)
         self.update_dependencies([new_sink])
 
-    def add_source(self, new_source, parent):
+    def add_source(self, new_source):
         self._source_list.append(new_source)
         self._source_index += 1
 
