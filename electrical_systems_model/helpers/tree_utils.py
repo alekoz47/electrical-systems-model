@@ -38,6 +38,18 @@ def link_into_edge(node, edge, tt):
     return tt
 
 
+def insert_node(node, target, tt):
+    parent = tt.parent(target)
+    children = tt.get_branch(target)
+    subtrees = list()
+    for child in children:
+        subtrees.append(tt.remove(child))
+    tt.add_node(node, parent)
+    for subtree in subtrees:
+        tt.paste(node.identifier, subtree)
+    return tt
+
+
 def get_largest_index(tt):
     largest_index = 0
     indices = [node.identifier for node in tt.all_nodes()]
