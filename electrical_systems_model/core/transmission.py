@@ -1,6 +1,7 @@
 from core.component import Component
 from core.power import ThreePhase
 from core.power import DirectCurrent
+import numpy
 import csv
 
 
@@ -69,12 +70,12 @@ class Cable(Transmission):
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
-        print(load_case_num)
+
         if load_case_num == 0:
-            print("solved cable: " + str(self.name))
+            # print("solved cable: " + str(self.name))
             self.set_distance()
             self.set_cable_size()
-        self.power_in.resistance_loss(self.resistance)
+        self.power_in.resistance_loss(numpy.sqrt(3) * self.resistance)  # TODO Check EE is correct and move the sqrt(3) to a better spot
         return self.power_in
 
     def load_data(self):
