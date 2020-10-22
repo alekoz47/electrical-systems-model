@@ -1,6 +1,7 @@
 from core.model import Model
 from core.sink import ElectricalSink
 from core.transmission import Cable, Transformer
+from core.data_input import import_epla
 
 
 def main():
@@ -66,3 +67,7 @@ def print_component_info(comp):
 if __name__ == "__main__":
     main()
 
+
+epla = import_epla()
+
+print(epla)
