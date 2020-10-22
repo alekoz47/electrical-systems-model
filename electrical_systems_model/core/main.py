@@ -70,4 +70,13 @@ if __name__ == "__main__":
 
 epla = import_epla()
 
-print(epla)
+# print(epla)
+import numpy
+loads = [0.25, 0.50, 0.75, 0.85, 1]
+fuel_consumption = [207, 193, 189, 189, 192]
+coefs = numpy.polyfit(loads, fuel_consumption, len(loads) - 1)
+print(coefs)
+percent_load = 0.9
+SFOC = coefs[0] * percent_load ** 4 + coefs[1] * percent_load ** 3 +coefs[2] * percent_load ** 2 + coefs[3] * percent_load + coefs[4]
+
+print(SFOC)
