@@ -79,4 +79,7 @@ print(coefs)
 percent_load = 0.9
 SFOC = coefs[0] * percent_load ** 4 + coefs[1] * percent_load ** 3 +coefs[2] * percent_load ** 2 + coefs[3] * percent_load + coefs[4]
 
+SFOC_test = numpy.polyval(coefs,percent_load)
 print(SFOC)
+
+print(SFOC_test)
