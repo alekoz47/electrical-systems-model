@@ -10,6 +10,8 @@ from core.transmission import Transmission, Transformer, Cable
 
 from core.model import Model
 
+from helpers.tree_utils import get_tree_edges
+
 # import <module>
 
 # use the following syntax for tests:
