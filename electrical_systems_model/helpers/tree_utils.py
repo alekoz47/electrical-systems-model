@@ -1,6 +1,3 @@
-import treelib as tree
-
-
 def get_tree_edges(tt):
     # returns list of edges given tree
     return _get_tree_edges_acc(tt, tt.root, list())
