@@ -1,41 +1,6 @@
 from core.model import Model
 from core.sink import ElectricalSink
-from core.transmission import Cable, Transformer
-
-
-def main():
-    # test run of Motor -> Transformer -> Generator (root)
-    # and several mutations
-
-    # Steps:
-    # create components
-    # create data model from components
-    # solve model
-
-    model = Model()
-    model.build()
-    model.print_tree()
-    # model.solve(["1", "2", "3"])
-
-    # straight hierarchy test
-    # transformer = Transformer([100, 12, 20], 440)
-    # motor = ElectricalSink([125, 3, 5], 10000, [1, 0.5, 0], 220, power_factor=0.8)
-    # components = [transformer, motor]
-    # motor.name = "Motor"
-    # transformer.name = "Transformer"
-    # model = Model()
-    # model.build_from_components_list(components)  # right now this just adds components in a straight hierarchy
-    # root_powers = model.solve(['Connected', 'At Sea'])
-    # print("Test 1 Power Output, Connected: " + str("%.1f" % abs(root_powers[0].power) + " W"))
-    # print("Test 1 Power Output, At Sea: " + str("%.1f" % abs(root_powers[1].power) + " W"))
-    # model.print_tree()
-    #
-    # print_component_info(transformer)
-    # print_component_info(motor)
-    #
-    # print("Transformer children:")
-    # for comp in transformer.get_children():
-    #     print(comp.name + " -> " + comp.get_children()[0].name)
+from core.transmission import Cable
 
 
 def print_component_info(comp):
@@ -48,7 +13,29 @@ def print_component_info(comp):
     print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
     if isinstance(comp, Cable):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
-    print(" \n")
+    print('\n')
+
+
+def format_power(power):
+    return "%.1f" % abs(power.power / 1000) + " kW"
+
+
+def main():
+
+    load_cases = ["0", "1", "2", "3", "4"]
+    model = Model()
+    model.build()
+    model.print_tree()
+
+    root_powers = model.solve(load_cases)
+
+    for case in load_cases:
+        print("Load Case " + case + ": " + format_power(root_powers.pop()))
+    print('\n')
+
+    components = model.export_components()
+    for comp in components:
+        print_component_info(comp)
 
 
 if __name__ == "__main__":

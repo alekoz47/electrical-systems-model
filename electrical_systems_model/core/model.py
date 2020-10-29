@@ -18,7 +18,7 @@ class Model:
         self._source_list = []
         self._sink_tree = treelib.Tree()
         self._sink_tree.create_node("Root", 0, None, Root([0, 0, 0]))
-        main_swbd = Panel([0, 0, 0], 1)
+        main_swbd = Panel([1, 1, 1], 1)  # TODO: place switchboard in a real location
         main_swbd.name = "Main Switchboard"
         self._sink_tree.create_node(main_swbd.name, 1, 0, main_swbd)
         self.load_case_num = 0
@@ -75,7 +75,8 @@ class Model:
         load_center_count = 1
         comp_id = 2
         for group in groups.values():
-            panel = Panel([0, 0, 0])
+            # TODO: place Panels in a real location
+            panel = Panel([load_center_count + 1, load_center_count + 1, load_center_count + 1])
             panel.name = "Load Center " + str(load_center_count)
             self._sink_tree.create_node(panel.name, comp_id, 1, panel)
             load_center_id = comp_id
@@ -88,6 +89,7 @@ class Model:
                             float(comp["Vertical Location"])]
 
                 load_factors = list()
+                load_factors.append(1)  # add connected load case for cable sizing
                 load_factor_index = 1
                 while ("Load Case " + str(load_factor_index)) in comp.keys():
                     load_factors.append(float(comp["Load Case " + str(load_factor_index)]))
@@ -170,6 +172,18 @@ class Model:
         # if source.get_index() == 0:
         #     print("Error: Source does not exist in list. No source removed.")
         self._source_list.pop(source.get_index())
+
+    def export_components(self):
+        """
+        Exports all components in tree to list of components by copying.
+        :return: list of Component
+        """
+        component_references = self._sink_tree.all_nodes()
+        component_copies = list()
+        for comp in component_references:
+            if isinstance(comp.data, Component) and not isinstance(comp.data, Root):
+                component_copies.append(comp.data.copy())
+        return component_copies
 
     def print_tree(self):
         self._sink_tree.show()
