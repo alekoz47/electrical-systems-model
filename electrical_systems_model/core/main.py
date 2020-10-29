@@ -1,7 +1,6 @@
 from core.model import Model
 from core.sink import ElectricalSink
 from core.transmission import Cable, Transformer
-from core.data_input import import_epla
 
 
 def main():
@@ -13,25 +12,30 @@ def main():
     # create data model from components
     # solve model
 
-    # straight hierarchy test
-    transformer = Transformer([100, 12, 20], 440)
-    motor = ElectricalSink([125, 3, 5], 10000, [1, 0.5, 0], 220, power_factor=0.8)
-    components = [transformer, motor]
-    motor.name = "Motor"
-    transformer.name = "Transformer"
     model = Model()
-    model.import_components(components)  # right now this just adds components in a straight hierarchy
-    root_powers = model.solve_model(['Connected', 'At Sea'])
-    print("Test 1 Power Output, Connected: " + str("%.1f" % abs(root_powers[0].power) + " W"))
-    print("Test 1 Power Output, At Sea: " + str("%.1f" % abs(root_powers[1].power) + " W"))
+    model.build()
     model.print_tree()
+    # model.solve(["1", "2", "3"])
 
-    print_component_info(transformer)
-    print_component_info(motor)
-
-    print("Transformer children:")
-    for comp in transformer.get_children():
-        print(comp.name + " -> " + comp.get_children()[0].name)
+    # straight hierarchy test
+    # transformer = Transformer([100, 12, 20], 440)
+    # motor = ElectricalSink([125, 3, 5], 10000, [1, 0.5, 0], 220, power_factor=0.8)
+    # components = [transformer, motor]
+    # motor.name = "Motor"
+    # transformer.name = "Transformer"
+    # model = Model()
+    # model.build_from_components_list(components)  # right now this just adds components in a straight hierarchy
+    # root_powers = model.solve(['Connected', 'At Sea'])
+    # print("Test 1 Power Output, Connected: " + str("%.1f" % abs(root_powers[0].power) + " W"))
+    # print("Test 1 Power Output, At Sea: " + str("%.1f" % abs(root_powers[1].power) + " W"))
+    # model.print_tree()
+    #
+    # print_component_info(transformer)
+    # print_component_info(motor)
+    #
+    # print("Transformer children:")
+    # for comp in transformer.get_children():
+    #     print(comp.name + " -> " + comp.get_children()[0].name)
 
 
 def print_component_info(comp):

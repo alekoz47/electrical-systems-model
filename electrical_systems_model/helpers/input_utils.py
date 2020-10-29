@@ -2,12 +2,11 @@ import csv
 
 
 def group_dictlist_by_key(components, key):
-    print(components)
     grouping = dict()
     for comp in components:
-        if comp[key] in grouping:
-            grouping[key] = list()
-        grouping[key].append(comp[key])
+        if comp[key] not in grouping:
+            grouping[comp[key]] = list()
+        grouping[comp[key]].append(comp)
     return grouping
 
 

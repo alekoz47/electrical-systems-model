@@ -1,8 +1,11 @@
+import csv
+
+import numpy
+
 from core.component import Component
 from core.power import ThreePhase
 from core.power import DirectCurrent
-import numpy
-import csv
+from helpers.math_utils import taxicab_ship_distance
 
 
 class Transmission(Component):
@@ -132,19 +135,7 @@ class Cable(Transmission):
     def set_distance(self):
         start_location = self.get_parents().location
         end_location = self.get_children()[0].location
-
-        # This finds the longitudinal distance in meters between the parent and child of the cable
-        long_distance = end_location[0] - start_location[0]
-
-        # This find the transverse length of cable in meters assuming the
-        # cable will run from the child and parent all the way to centerline before running longitudinally
-        tran_distance = abs(end_location[1]) + abs(start_location[1])
-
-        # This finds the longitudinal distance in meters between the parent and child of the cable
-        vert_distance = end_location[2] - start_location[2]
-
-        # This find the total length of cable needed
-        self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
+        self.length = taxicab_ship_distance(start_location, end_location)
 
 class VFD(Transmission):
     def __init__(self, location, efficiency=0.9):
