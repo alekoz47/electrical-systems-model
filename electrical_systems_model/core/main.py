@@ -70,6 +70,7 @@ from core.source import LowSpeedDiesel
 #     main()
 
 
+
 # epla = import_epla()
 #
 # # print(epla)
@@ -98,3 +99,4 @@ test_lsd = LowSpeedDiesel([0,0,0], 17183, 70, 20, [20,10,5])
 test_lsd.evaluate_load_case(0)
 print([engine["Load Case SFOC"] for engine in test_lsd.potential_engine])
 print([engine['Load Case Fuel Consumption'] / (1000*1000) for engine in test_lsd.potential_engine])
+
