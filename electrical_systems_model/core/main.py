@@ -1,3 +1,5 @@
+import time
+
 from core.model import Model
 from core.sink import ElectricalSink
 from core.transmission import Cable
@@ -24,10 +26,14 @@ def main():
 
     load_cases = ["0", "1", "2", "3", "4"]
     model = Model()
+    start = time.time()
     model.build()
+    build_time = time.time() - start
     model.print_tree()
 
+    start = time.time()
     root_powers = model.solve(load_cases)
+    solve_time = time.time() - start
 
     for case in load_cases:
         print("Load Case " + case + ": " + format_power(root_powers.pop()))
@@ -36,6 +42,10 @@ def main():
     components = model.export_components()
     for comp in components:
         print_component_info(comp)
+
+    print("Model Evaluation Times")
+    print("Build Time: " + str("%.0f" % (build_time * 1000)) + " ms")
+    print("Solve Time: " + str("%.0f" % (solve_time * 1000)) + " ms")
 
 
 if __name__ == "__main__":
