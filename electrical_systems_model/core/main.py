@@ -30,6 +30,7 @@ def main():
     model.build()
     build_time = time.time() - start
     model.print_tree()
+    model.export_tree()
 
     start = time.time()
     root_powers = model.solve(load_cases)

@@ -45,6 +45,7 @@ class Panel(Transmission):
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
+        self.power_in.efficiency_loss(self.efficiency)
         return self.power_in
 
 

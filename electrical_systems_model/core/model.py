@@ -8,6 +8,7 @@ from core.transmission import Cable, Panel
 from core.component import Component
 from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index
 from helpers.input_utils import group_dictlist_by_key, import_csv_as_dictlist
+from helpers.math_utils import taxicab_ship_distance
 
 
 class Model:
@@ -75,8 +76,13 @@ class Model:
         load_center_count = 1
         comp_id = 2
         for group in groups.values():
-            # TODO: place Panels in a real location
-            panel = Panel([load_center_count + 1, load_center_count + 1, load_center_count + 1])
+
+            # place panel 1m transverse and 1m longitudinal from first component at same vertical location
+            first_component = group[0].copy()
+            first_location = [float(first_component["Longitudinal Location"]) + 1,
+                              float(first_component["Transverse Location"]) + 1,
+                              float(first_component["Vertical Location"])]
+            panel = Panel(first_location)
             panel.name = "Load Center " + str(load_center_count)
             self._sink_tree.create_node(panel.name, comp_id, 1, panel)
             load_center_id = comp_id
@@ -104,7 +110,56 @@ class Model:
                 self._sink_tree.create_node(sink.name, comp_id, load_center_id, sink)
                 comp_id += 1
 
+        # run other operations to organize the tree
+        self.split_by_distance(50)
+        self.split_by_num_loads(12)  # 12 loads is 36 poles for 3-phase, which means a large panel!
+
         self.reset_components()
+
+    def split_by_distance(self, max_distance):
+        """
+        Splits subtrees of panels into new panels based on distance between groups.
+        :param max_distance: maximum distance between loads and panel
+        """
+        # There are two main methods here. The easiest will be to separate the ship into quadrants but will require
+        # additional data. The harder will be to separate components into clusters based on K-Means Clustering.
+
+        # TODO: Stop doing this. Implement one of the above techniques.
+        # The cop-out way is to place the panel next to the location of the first component, then enforce a strict
+        # distance limit on its other components. If one component does not meet this criterion, we create a new panel.
+
+        nodes = [node for node in self._sink_tree.all_nodes()]
+        panels = [node for node in nodes if isinstance(node.data, Panel) and node.identifier != 1]
+
+        for panel in panels:
+            load_center_count = 1
+            for child in [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]:
+                if taxicab_ship_distance(child.data.location, panel.data.location) > max_distance:
+                    # create a new panel
+                    location = child.data.location
+                    location[0] += 1
+                    location[1] += 1
+                    new_panel = Panel(location)
+                    new_panel.name = panel.data.name + "-" + str(load_center_count)
+                    parent = self._sink_tree.parent(panel.identifier)
+                    identifier = get_largest_index(self._sink_tree) + 1
+                    # TODO: use default identifiers to avoid confusion
+                    new_panel_node = treelib.Node(tag=new_panel.name,
+                                                  identifier=identifier,
+                                                  data=new_panel)
+                    self._sink_tree.add_node(node=new_panel_node, parent=parent)
+                    # attach the misfit component to the new panel
+                    # we don't sort yet, we just isolate misfits
+                    # TODO: sort misfit components into proper panels
+                    self._sink_tree.move_node(child.identifier, new_panel_node.identifier)
+                    load_center_count += 1
+
+    def split_by_num_loads(self, max_num_loads):
+        """
+        Splits subtrees of panels into new panels based on number of loads.
+        :param max_num_loads: maximum number of loads per panel
+        """
+        pass
 
     def add_cables(self):
         # add cables in between all component "edges" (sets of two linked components)
@@ -187,6 +242,9 @@ class Model:
 
     def print_tree(self):
         self._sink_tree.show()
+
+    def export_tree(self):
+        self._sink_tree.to_graphviz(filename="../data/graph.gv", shape=u'circle', graph=u'digraph')
 
     def export_old(self, filepath):
         pass
