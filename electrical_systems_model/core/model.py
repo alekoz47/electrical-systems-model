@@ -133,26 +133,32 @@ class Model:
 
         for panel in panels:
             load_center_count = 1
+            valid_panels = list()
+            # we want to check each child of every panel and sort it into a better-fitting new panel if
+            # it does not fit within the maximum distance of its original parent panel
             for child in [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]:
-                if taxicab_ship_distance(child.data.location, panel.data.location) > max_distance:
-                    # create a new panel
-                    location = child.data.location
-                    location[0] += 1
-                    location[1] += 1
-                    new_panel = Panel(location)
-                    new_panel.name = panel.data.name + "-" + str(load_center_count)
-                    parent = self._sink_tree.parent(panel.identifier)
-                    identifier = get_largest_index(self._sink_tree) + 1
-                    # TODO: use default identifiers to avoid confusion
-                    new_panel_node = treelib.Node(tag=new_panel.name,
-                                                  identifier=identifier,
-                                                  data=new_panel)
-                    self._sink_tree.add_node(node=new_panel_node, parent=parent)
-                    # attach the misfit component to the new panel
-                    # we don't sort yet, we just isolate misfits
-                    # TODO: sort misfit components into proper panels
-                    self._sink_tree.move_node(child.identifier, new_panel_node.identifier)
-                    load_center_count += 1
+                if taxicab_ship_distance(child.data.location, panel.data.location) < max_distance:
+                    pass
+                else:
+                    for valid_panel in valid_panels:
+                        if not taxicab_ship_distance(child.data.location, valid_panel.data.location) > max_distance:
+                            # create a new panel
+                            location = child.data.location
+                            location[0] += 1
+                            location[1] += 1
+                            new_panel = Panel(location)
+                            new_panel.name = panel.data.name + "-" + str(load_center_count)
+                            parent = self._sink_tree.parent(panel.identifier)
+                            identifier = get_largest_index(self._sink_tree) + 1
+                            # TODO: use default identifiers to avoid confusion
+                            new_panel_node = treelib.Node(tag=new_panel.name,
+                                                          identifier=identifier,
+                                                          data=new_panel)
+                            self._sink_tree.add_node(node=new_panel_node, parent=parent)
+                            new_panels.append(new_panel_node)
+                        # attach the misfit component to the new panel
+                        self._sink_tree.move_node(child.identifier, valid_panel.identifier)
+                        load_center_count += 1
 
     def split_by_num_loads(self, max_num_loads):
         """
