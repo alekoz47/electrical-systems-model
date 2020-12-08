@@ -10,12 +10,13 @@ class Source(Component):
         super().__init__(location)
         self.power_in = power
 
-    def get_power_in(self):  # TODO Check that this is correct
+    def get_power_in(self):
         pass
 
 
 # TODO: implement electrical-mechanical power transfer
 #   this means we need both a Diesel and a Generator
+
 class DieselGenerator(Source):
     def __init__(self, location, rated_power_electric, gen_efficiency=0.965):
         super().__init__(location, rated_power_electric)
@@ -194,3 +195,7 @@ class LowSpeedDiesel(Source):
         for index, value in enumerate(ordered_dic):
             value[key] = added_list[index]
         return ordered_dic
+      
+class Generator(Source):
+    def __init__(self, location, power):
+        super().__init__(location, power)
