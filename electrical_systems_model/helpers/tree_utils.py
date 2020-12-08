@@ -1,3 +1,6 @@
+import treelib as tree
+
+
 def get_tree_edges(tt):
     # returns list of edges given tree
     return _get_tree_edges_acc(tt, tt.root, list())
@@ -46,7 +49,7 @@ def insert_node(node, target, tt):
         tt.paste(node.identifier, subtree)
     return tt
 
-
+  
 def get_largest_index(tt):
     largest_index = 0
     indices = [node.identifier for node in tt.all_nodes()]

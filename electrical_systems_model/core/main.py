@@ -2,8 +2,6 @@ import time
 
 from core.model import Model
 from core.sink import ElectricalSink
-from core.transmission import Cable
-
 
 def print_component_info(comp):
     print(comp.name)
@@ -16,7 +14,6 @@ def print_component_info(comp):
     if isinstance(comp, Cable):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
     print('\n')
-
 
 def format_power(power):
     return "%.1f" % abs(power.power / 1000) + " kW"
@@ -48,6 +45,6 @@ def main():
     print("Build Time: " + str("%.0f" % (build_time * 1000)) + " ms")
     print("Solve Time: " + str("%.0f" % (solve_time * 1000)) + " ms")
 
-
+    
 if __name__ == "__main__":
     main()
