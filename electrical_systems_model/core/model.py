@@ -179,12 +179,6 @@ class Model:
             cable_index += 1
             self._sink_tree = link_into_edge(new_node, edge, self._sink_tree)
         self.reset_components()
-            if isinstance(comp, Source):
-                self.add_source(comp)
-            else:
-                self.add_sink_from_index(comp, self._sink_index)
-        self.add_cables()
-        self.update_dependencies()
 
     def update_dependencies(self):
         # TODO: remove this
@@ -251,19 +245,6 @@ class Model:
             if isinstance(comp.data, Component) and not isinstance(comp.data, Root):
                 component_copies.append(comp.data.copy())
         return component_copies
-
-    def add_cables(self):
-        # add cables in between all component "edges" (sets of two linked components)
-        cable_index = get_largest_index(self._sink_tree) + 1
-        edges = get_tree_edges(self._sink_tree)
-        for edge in edges:
-            new_node = tree.Node("Cable " + str(cable_index),
-                                 cable_index,
-                                 data=Cable([0, 0, 0]))
-            new_node.data.name = "Cable " + str(cable_index)
-            cable_index += 1
-            self._sink_tree = link_into_edge(new_node, edge, self._sink_tree)
-        self.reset_components()
 
     def print_tree(self):
         self._sink_tree.show()
