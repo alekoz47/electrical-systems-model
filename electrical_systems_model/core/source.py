@@ -1,8 +1,8 @@
 import csv
+
 import numpy
 
 from core.component import Component
-from core.power import Power
 
 
 class Source(Component):
@@ -28,10 +28,10 @@ class DieselGenerator(Source):
         self.co2_rate = None
 
     def SFOC_curve(self, percent_load):
-        '''
+        """
         This SFOC curve is for Man D&T L21/31 Diesel Generator at 1000rpm
         The data for the SFOC points can be found on page 139 of the L21/31 project guide
-        '''
+        """
 
         loads = [0.25, 0.50, 0.75, 0.85, 1]
         fuel_consumption = [216, 196, 192, 191, 193]
@@ -60,11 +60,13 @@ class DieselGenerator(Source):
         self.co2_rate = power_wanted * co2_specific_rate  # This gives the co2 generation rate in g/hr
         return self.co2_rate
 
+
 class LowSpeedDiesel(Source):
     _ENGINE_DATABASE = []
 
-    def __init__(self, location, needed_ehp, design_rpm, design_speed, vessel_speeds, propulsive_coef = 0.68, shafting_loss = 0.01, sea_margin = 1.15, engine_margin = 0.9):
-        super().__init__(location, 0) # TODO Figure out what power in needs to be (not zero)
+    def __init__(self, location, needed_ehp, design_rpm, design_speed, vessel_speeds, propulsive_coef=0.68,
+                 shafting_loss=0.01, sea_margin=1.15, engine_margin=0.9):
+        super().__init__(location, 0)  # TODO Figure out what power in needs to be (not zero)
         if not bool(self._ENGINE_DATABASE):
             self.load_data()
         self.MCR = self.find_mcr(needed_ehp, propulsive_coef, shafting_loss, sea_margin, engine_margin)
@@ -93,18 +95,16 @@ class LowSpeedDiesel(Source):
         self.sox_rate = None
         self.co2_rate = None
 
-
     def evaluate_load_case(self, load_case_num):
         # This method should return fuel burn rate, nox rate, sox rate
         self.get_SFOC_at_power(self.load_case_powers[load_case_num])
         list_of_fuel_consumptions = []
         for engine in self.potential_engine:
-            fuel_consumption = self.load_case_powers[load_case_num] * engine['Load Case SFOC'] / (1000*1000)
+            fuel_consumption = self.load_case_powers[load_case_num] * engine['Load Case SFOC'] / (1000 * 1000)
             # fuel consumption is given in MT/hr
             list_of_fuel_consumptions.append(fuel_consumption)
-        self.potential_engine = self.append_od(self.potential_engine, list_of_fuel_consumptions, 'Load Case Fuel Consumption')
-
-
+        self.potential_engine = self.append_od(self.potential_engine, list_of_fuel_consumptions,
+                                               'Load Case Fuel Consumption')
 
     def find_mcr(self, needed_ehp, propulsive_coef, shafting_loss, sea_margin, engine_margin):
         needed_dhp = needed_ehp / propulsive_coef
@@ -114,8 +114,8 @@ class LowSpeedDiesel(Source):
 
     def find_mcr_rpm(self, design_rpm, sea_margin, engine_margin):
         heavy_running_rpm_dp = 0.95 * design_rpm
-        rpm_sp = heavy_running_rpm_dp * sea_margin ** (1/3)
-        rpm_mp = rpm_sp * (1/engine_margin) ** (1/3)
+        rpm_sp = heavy_running_rpm_dp * sea_margin ** (1 / 3)
+        rpm_mp = rpm_sp * (1 / engine_margin) ** (1 / 3)
         return rpm_mp
 
     def load_data(self):
@@ -134,15 +134,19 @@ class LowSpeedDiesel(Source):
         list_of_cylinder = []
         for index, engine in enumerate(self._ENGINE_DATABASE):
             for num_cylinder in range(int(engine['Zmin']), int(engine['Zmax'])):
-                min_MCR = num_cylinder * (engine['L2'] - engine['L4']) / (engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L4']
-                max_MCR = num_cylinder * (engine['L1'] - engine['L3']) / (engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L3']
-                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine['nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
+                min_MCR = num_cylinder * (engine['L2'] - engine['L4']) / (
+                        engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L4']
+                max_MCR = num_cylinder * (engine['L1'] - engine['L3']) / (
+                        engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L3']
+                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine[
+                    'nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
                     self.potential_engine.append(engine)
                     list_of_cylinder.append(num_cylinder)
         self.potential_engine = self.append_od(self.potential_engine, list_of_cylinder, 'Cylinders')
 
     def calculate_mep(self, engine, power, rpm):
-        calculated_mep = 60/100 * power / (engine['Stroke'] * numpy.pi * engine['Bore']**2/4 * rpm * engine['Cylinders'])
+        calculated_mep = 60 / 100 * power / (
+                engine['Stroke'] * numpy.pi * engine['Bore'] ** 2 / 4 * rpm * engine['Cylinders'])
         return calculated_mep
 
     def get_SFOC_at_SMCR(self):
@@ -190,16 +194,3 @@ class LowSpeedDiesel(Source):
         for index, value in enumerate(ordered_dic):
             value[key] = added_list[index]
         return ordered_dic
-
-
-
-
-
-
-
-
-
-
-
-
-
