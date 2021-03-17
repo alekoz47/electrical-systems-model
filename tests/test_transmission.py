@@ -13,7 +13,6 @@ class MockComponent:
         self.power_out = power_out
 
 class TestCable(TestCase):
-    data_path =
 
     def test_distance_finder(self):
         mock_child = MockComponent([0,0,0], None)

@@ -2,7 +2,8 @@ import time
 
 from core.model import Model
 from core.sink import ElectricalSink
-from core.transmission import Cable
+
+from core.transmission import Cable, Transformer
 
 
 def print_component_info(comp):

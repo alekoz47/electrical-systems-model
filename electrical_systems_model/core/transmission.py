@@ -41,6 +41,7 @@ class Panel(Transmission):
     def __init__(self, location, efficiency=1):
         super().__init__(location)
         self.efficiency = efficiency
+        self.group = ""
 
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)

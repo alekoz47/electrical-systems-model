@@ -58,3 +58,8 @@ def get_largest_index(tt):
 
 def convert_node_to_tag(node, tt):
     return tt.get_node(node).tag
+
+
+def list_of_type(tt, type_object):
+    nodes = [node for node in tt.all_nodes()]
+    return [node for node in nodes if isinstance(node.data, type_object) and node.identifier != 1]
