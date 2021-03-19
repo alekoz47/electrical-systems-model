@@ -208,7 +208,39 @@ class Model:
         self.reset_components()  # does this need to be run?
 
     def split_by_current(self, max_current):
-        pass
+        """
+        Splits subtrees of panels into new panels based on specified max current.
+        :param max_current: maximum current in Amps
+        """
+        panels = list_of_type(self._sink_tree, Panel)
+        new_panels = list()
+
+        for panel in panels:
+            load_center_count = 1
+            children = [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]
+            current_load = sum([child.data.power_in.current for child in children])
+            if current_load > max_current:
+                left_children = children[:len(children) // 2]
+
+                # attach left_children to new panel
+                location = list(map(sum, zip(left_children[0].data.location, [1, 1, 0])))  # prevent zero-length cable
+                left_panel = Panel(location)
+                left_panel.name = panel.data.name + "-" + str(load_center_count)
+                left_panel.group = panel.data.group
+                parent = self._sink_tree.parent(panel.identifier)
+                identifier = get_largest_index(self._sink_tree) + 1
+                # TODO: use default identifiers to avoid confusion
+                left_panel_node = treelib.Node(tag=left_panel.name,
+                                               identifier=identifier,
+                                               data=left_panel)
+                self._sink_tree.add_node(node=left_panel_node, parent=parent)
+                new_panels.append(left_panel_node)
+                chosen_panel = left_panel_node
+                for child in left_children:
+                    self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                load_center_count += 1
+
+            self.reset_components()  # does this need to be run?
 
     def add_cables(self):
         # add cables in between all component "edges" (sets of two linked components)
