@@ -1,6 +1,5 @@
+import copy
 from abc import abstractmethod
-
-from core.power import ThreePhase
 
 
 class Component:
@@ -54,3 +53,6 @@ class Component:
 
     def set_index(self, index):
         self._index = index
+
+    def copy(self):
+        return copy.copy(self)

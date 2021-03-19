@@ -1,6 +1,11 @@
+import csv
+
+import numpy
+
 from core.component import Component
 from core.power import ThreePhase
 from core.power import DirectCurrent
+from helpers.math_utils import taxicab_ship_distance
 import csv
 
 
@@ -40,13 +45,8 @@ class Panel(Transmission):
 
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
-        voltage_level_in = 0
-        # TODO Actually make this correct
-        self.power_out = ThreePhase(1, 2, 3, 4)  # for testing purposes
-        self.power_in = ThreePhase(self.power_out.power / self.efficiency,
-                                   voltage_level_in,
-                                   self.power_out.frequency,
-                                   self.power_out.power_factor)
+        self.power_in = self.power_out.copy()
+        self.power_in.efficiency_loss(self.efficiency)
         return self.power_in
 
 
@@ -74,6 +74,8 @@ class Cable(Transmission):
         if load_case_num == 0:
             self.set_distance()
             self.set_cable_size()
+        self.power_in.resistance_loss(
+            numpy.sqrt(3) * self.resistance)  # TODO Check EE is correct and move the sqrt(3) to a better spot
         self.power_in.resistance_loss(self.resistance)
         return self.power_in
 
@@ -92,12 +94,22 @@ class Cable(Transmission):
             selected_size_index = self.find_cable_size()
             if self.num_conductors > 50:
                 print("Current is very high in " + self.name)
+                # TODO: add behavior to split into branches in this case
+                break
             else:
                 self.num_conductors += 1
         self.num_conductors -= 1  # subtract 1 for now -> yields correct answer
         # this while loop could be rewritten for better practices and readability
 
         # This section calculates the resistance per m using the cross sectional area of the conductors
+        resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
+        resistivity_temp = 20  # degree C
+        rated_temp = 85  # degree C
+        alpha_temp_coef = 0.00429  # TODO Find source for Alpha
+        resistivity_copper_rated_temp = resistivity_copper_20C * (
+                    1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
+        resistance_per_meter = resistivity_copper_rated_temp / (
+                    float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
         resistivity_copper = 1.724 * 10 ** (-8)  # Ohm*m TODO: Find source for resistivity
         core_temp = 20  # degree C
         rated_temp = 85  # degree C
@@ -125,8 +137,7 @@ class Cable(Transmission):
         for index, cable_size in enumerate(self._CABLE_SIZE):
             self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) *
                                          self.length / self.num_conductors) / self.power_out.voltage
-            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and \
-                    self.voltage_drop_percent <= 0.3:
+            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
                 selected_size_index = index
                 return selected_size_index
         return -1
@@ -134,6 +145,7 @@ class Cable(Transmission):
     def set_distance(self):
         start_location = self.get_parents().location
         end_location = self.get_children()[0].location
+        self.length = taxicab_ship_distance(start_location, end_location)
 
         # This finds the longitudinal distance in meters between the parent and child of the cable
         long_distance = end_location[0] - start_location[0]

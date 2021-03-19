@@ -1,37 +1,7 @@
+import time
+
 from core.model import Model
 from core.sink import ElectricalSink
-from core.transmission import Cable, Transformer
-
-
-def main():
-    # test run of Motor -> Transformer -> Generator (root)
-    # and several mutations
-
-    # Steps:
-    # create components
-    # create data model from components
-    # solve model
-
-    # straight hierarchy test
-    transformer = Transformer([100, 12, 20], 440)
-    motor = ElectricalSink([125, 3, 5], 10000, [1, 0.5, 0], 220, power_factor=0.8)
-    components = [transformer, motor]
-    motor.name = "Motor"
-    transformer.name = "Transformer"
-    model = Model()
-    model.import_components(components)  # right now this just adds components in a straight hierarchy
-    root_powers = model.solve_model(['Connected', 'At Sea'])
-    print("Test 1 Power Output, Connected: " + str("%.1f" % abs(root_powers[0].power) + " W"))
-    print("Test 1 Power Output, At Sea: " + str("%.1f" % abs(root_powers[1].power) + " W"))
-    model.print_tree()
-
-    print_component_info(transformer)
-    print_component_info(motor)
-
-    print("Transformer children:")
-    for comp in transformer.get_children():
-        print(comp.name + " -> " + comp.get_children()[0].name)
-
 
 def print_component_info(comp):
     print(comp.name)
@@ -43,8 +13,38 @@ def print_component_info(comp):
     print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
     if isinstance(comp, Cable):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
-    print(" \n")
+    print('\n')
+
+def format_power(power):
+    return "%.1f" % abs(power.power / 1000) + " kW"
 
 
+def main():
+
+    load_cases = ["0", "1", "2", "3", "4"]
+    model = Model()
+    start = time.time()
+    model.build()
+    build_time = time.time() - start
+    model.print_tree()
+    model.export_tree()
+
+    start = time.time()
+    root_powers = model.solve(load_cases)
+    solve_time = time.time() - start
+
+    for case in load_cases:
+        print("Load Case " + case + ": " + format_power(root_powers.pop()))
+    print('\n')
+
+    components = model.export_components()
+    for comp in components:
+        print_component_info(comp)
+
+    print("Model Evaluation Times")
+    print("Build Time: " + str("%.0f" % (build_time * 1000)) + " ms")
+    print("Solve Time: " + str("%.0f" % (solve_time * 1000)) + " ms")
+
+    
 if __name__ == "__main__":
     main()
