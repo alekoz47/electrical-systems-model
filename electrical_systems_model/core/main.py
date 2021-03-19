@@ -3,6 +3,9 @@ import time
 from core.model import Model
 from core.sink import ElectricalSink
 
+from core.transmission import Cable, Transformer
+
+
 def print_component_info(comp):
     print(comp.name)
     print("Power in: " + str("%.1f" % abs(comp.power_in.power / 1000)) + " kW")
@@ -14,6 +17,7 @@ def print_component_info(comp):
     if isinstance(comp, Cable):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
     print('\n')
+
 
 def format_power(power):
     return "%.1f" % abs(power.power / 1000) + " kW"
@@ -27,7 +31,8 @@ def main():
     model.build()
     build_time = time.time() - start
     model.print_tree()
-    model.export_tree()
+    model.export_tree(show_cables=True)
+    model.export_tree(show_cables=False)
 
     start = time.time()
     root_powers = model.solve(load_cases)
@@ -45,6 +50,6 @@ def main():
     print("Build Time: " + str("%.0f" % (build_time * 1000)) + " ms")
     print("Solve Time: " + str("%.0f" % (solve_time * 1000)) + " ms")
 
-    
+
 if __name__ == "__main__":
     main()

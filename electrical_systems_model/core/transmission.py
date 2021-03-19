@@ -6,7 +6,6 @@ from core.component import Component
 from core.power import ThreePhase
 from core.power import DirectCurrent
 from helpers.math_utils import taxicab_ship_distance
-import csv
 
 
 class Transmission(Component):
@@ -42,6 +41,7 @@ class Panel(Transmission):
     def __init__(self, location, efficiency=1):
         super().__init__(location)
         self.efficiency = efficiency
+        self.group = ""
 
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
@@ -63,7 +63,6 @@ class Cable(Transmission):
         #     flag = 1
         self.weight = 0  # TODO Move to parent class????
         self.length = 0
-        self.num_conductors = 0  # so we know it hasn't been calculated yet
         self.voltage_drop_percent = 0
         if not bool(self._CABLE_SIZE):
             self.load_data()
@@ -71,12 +70,13 @@ class Cable(Transmission):
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
+
         if load_case_num == 0:
+            # print("solved cable: " + str(self.name))
             self.set_distance()
             self.set_cable_size()
         self.power_in.resistance_loss(
             numpy.sqrt(3) * self.resistance)  # TODO Check EE is correct and move the sqrt(3) to a better spot
-        self.power_in.resistance_loss(self.resistance)
         return self.power_in
 
     def load_data(self):
@@ -98,8 +98,7 @@ class Cable(Transmission):
                 break
             else:
                 self.num_conductors += 1
-        self.num_conductors -= 1  # subtract 1 for now -> yields correct answer
-        # this while loop could be rewritten for better practices and readability
+        self.num_conductors -= 1  # subtract one for now
 
         # This section calculates the resistance per m using the cross sectional area of the conductors
         resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
@@ -110,18 +109,10 @@ class Cable(Transmission):
                     1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
         resistance_per_meter = resistivity_copper_rated_temp / (
                     float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
-        resistivity_copper = 1.724 * 10 ** (-8)  # Ohm*m TODO: Find source for resistivity
-        core_temp = 20  # degree C
-        rated_temp = 85  # degree C
-        alpha_temp_coeff = 0.00429  # TODO: Find source for Alpha
-        resistivity_copper_rated_temp = resistivity_copper * (
-                1 + alpha_temp_coeff * (rated_temp - core_temp))  # Ohm*m
-        resistance_per_meter = resistivity_copper_rated_temp / (
-                float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
 
         self.resistance = resistance_per_meter * self.length / self.num_conductors  # Check EE
 
-        # TODO: write if statement to determine if cable three phase or single phase/DC and do weight correctly
+        # TODO write if statement to determine if cable three phase or single phase/DC and do weight correctly
         # This section finds the linear weight of the selected cable on a per core basis
         density_of_copper = 8.95  # mt/m^3
         linear_weight = density_of_copper * float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2)
@@ -146,19 +137,6 @@ class Cable(Transmission):
         start_location = self.get_parents().location
         end_location = self.get_children()[0].location
         self.length = taxicab_ship_distance(start_location, end_location)
-
-        # This finds the longitudinal distance in meters between the parent and child of the cable
-        long_distance = end_location[0] - start_location[0]
-
-        # This find the transverse length of cable in meters assuming the
-        # cable will run from the child and parent all the way to centerline before running longitudinally
-        tran_distance = abs(end_location[1]) + abs(start_location[1])
-
-        # This finds the longitudinal distance in meters between the parent and child of the cable
-        vert_distance = end_location[2] - start_location[2]
-
-        # This sets the total length of cable needed
-        self.length = abs(long_distance) + abs(tran_distance) + abs(vert_distance)
 
 
 class VFD(Transmission):

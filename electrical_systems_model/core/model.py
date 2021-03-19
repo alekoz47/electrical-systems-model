@@ -6,7 +6,7 @@ from core.source import Source
 from core.sink import ElectricalSink
 from core.transmission import Cable, Panel
 from core.component import Component
-from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index
+from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index, list_of_type
 from helpers.input_utils import group_dictlist_by_key, import_csv_as_dictlist
 from helpers.math_utils import taxicab_ship_distance
 
@@ -84,6 +84,7 @@ class Model:
                               float(first_component["Vertical Location"])]
             panel = Panel(first_location)
             panel.name = "Load Center " + str(load_center_count)
+            panel.group = group
             self._sink_tree.create_node(panel.name, comp_id, 1, panel)
             load_center_id = comp_id
             comp_id += 1
@@ -121,51 +122,125 @@ class Model:
         Splits subtrees of panels into new panels based on distance between groups.
         :param max_distance: maximum distance between loads and panel
         """
-        # There are two main methods here. The easiest will be to separate the ship into quadrants but will require
+        # There are two good methods here. The easiest will be to separate the ship into quadrants but will require
         # additional data. The harder will be to separate components into clusters based on K-Means Clustering.
-
-        # TODO: Stop doing this. Implement one of the above techniques.
-        # The cop-out way is to place the panel next to the location of the first component, then enforce a strict
+        # The simple method is to place the panel next to the location of the first component, then enforce a strict
         # distance limit on its other components. If one component does not meet this criterion, we create a new panel.
+        # This third method is not great but will do for the current scope.
 
-        nodes = [node for node in self._sink_tree.all_nodes()]
-        panels = [node for node in nodes if isinstance(node.data, Panel) and node.identifier != 1]
+        panels = list_of_type(self._sink_tree, Panel)
+        new_panels = list()
 
         for panel in panels:
             load_center_count = 1
-            valid_panels = list()
             # we want to check each child of every panel and sort it into a better-fitting new panel if
             # it does not fit within the maximum distance of its original parent panel
             for child in [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]:
                 if taxicab_ship_distance(child.data.location, panel.data.location) < max_distance:
+                    # keep association with current panel
                     pass
                 else:
-                    for valid_panel in valid_panels:
-                        if not taxicab_ship_distance(child.data.location, valid_panel.data.location) > max_distance:
-                            # create a new panel
-                            location = child.data.location
-                            location[0] += 1
-                            location[1] += 1
-                            new_panel = Panel(location)
-                            new_panel.name = panel.data.name + "-" + str(load_center_count)
-                            parent = self._sink_tree.parent(panel.identifier)
-                            identifier = get_largest_index(self._sink_tree) + 1
-                            # TODO: use default identifiers to avoid confusion
-                            new_panel_node = treelib.Node(tag=new_panel.name,
-                                                          identifier=identifier,
-                                                          data=new_panel)
-                            self._sink_tree.add_node(node=new_panel_node, parent=parent)
-                            new_panels.append(new_panel_node)
-                        # attach the misfit component to the new panel
-                        self._sink_tree.move_node(child.identifier, valid_panel.identifier)
-                        load_center_count += 1
+                    chosen_panel = None
+                    # attach to panel of same hierarchy with better fit
+                    if new_panels:
+                        # attempt to choose existing panel
+                        for new_panel in new_panels:
+                            if taxicab_ship_distance(child.data.location, new_panel.data.location) < max_distance \
+                                    and new_panel.data.group == panel.data.group:
+                                chosen_panel = new_panel
+                    else:
+                        # create new panel and add to list of new_panels
+                        # choose new panel
+                        location = list(map(sum, zip(child.data.location, [1, 1, 0])))  # prevent zero-length cable
+                        new_panel = Panel(location)
+                        new_panel.name = panel.data.name + "-" + str(load_center_count)
+                        new_panel.group = panel.data.group
+                        parent = self._sink_tree.parent(panel.identifier)
+                        identifier = get_largest_index(self._sink_tree) + 1
+                        # TODO: use default identifiers to avoid confusion
+                        new_panel_node = treelib.Node(tag=new_panel.name,
+                                                      identifier=identifier,
+                                                      data=new_panel)
+                        self._sink_tree.add_node(node=new_panel_node, parent=parent)
+                        new_panels.append(new_panel_node)
+                        chosen_panel = new_panel_node
+                    # attach the misfit component to the chosen panel
+                    self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                    load_center_count += 1
+
+        self.reset_components()  # does this need to be run?
 
     def split_by_num_loads(self, max_num_loads):
         """
         Splits subtrees of panels into new panels based on number of loads.
         :param max_num_loads: maximum number of loads per panel
         """
-        pass
+        panels = list_of_type(self._sink_tree, Panel)
+        new_panels = list()
+
+        for panel in panels:
+            load_center_count = 1
+            # we want to check each child of every panel and sort it into a better-fitting new panel if
+            # it does not fit within the maximum distance of its original parent panel
+            if len(self._sink_tree.is_branch(panel.identifier)) > max_num_loads:
+                # split branch in half!
+                children = [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]
+                left_children = children[:len(children) // 2]
+
+                # attach left_children to new panel
+                location = list(map(sum, zip(left_children[0].data.location, [1, 1, 0])))  # prevent zero-length cable
+                left_panel = Panel(location)
+                left_panel.name = panel.data.name + "-" + str(load_center_count)
+                left_panel.group = panel.data.group
+                parent = self._sink_tree.parent(panel.identifier)
+                identifier = get_largest_index(self._sink_tree) + 1
+                # TODO: use default identifiers to avoid confusion
+                left_panel_node = treelib.Node(tag=left_panel.name,
+                                               identifier=identifier,
+                                               data=left_panel)
+                self._sink_tree.add_node(node=left_panel_node, parent=parent)
+                new_panels.append(left_panel_node)
+                chosen_panel = left_panel_node
+                for child in left_children:
+                    self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                load_center_count += 1
+
+        self.reset_components()  # does this need to be run?
+
+    def split_by_current(self, max_current):
+        """
+        Splits subtrees of panels into new panels based on specified max current.
+        :param max_current: maximum current in Amps
+        """
+        panels = list_of_type(self._sink_tree, Panel)
+        new_panels = list()
+
+        for panel in panels:
+            load_center_count = 1
+            children = [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]
+            current_load = sum([child.data.power_in.current for child in children])
+            if current_load > max_current:
+                left_children = children[:len(children) // 2]
+
+                # attach left_children to new panel
+                location = list(map(sum, zip(left_children[0].data.location, [1, 1, 0])))  # prevent zero-length cable
+                left_panel = Panel(location)
+                left_panel.name = panel.data.name + "-" + str(load_center_count)
+                left_panel.group = panel.data.group
+                parent = self._sink_tree.parent(panel.identifier)
+                identifier = get_largest_index(self._sink_tree) + 1
+                # TODO: use default identifiers to avoid confusion
+                left_panel_node = treelib.Node(tag=left_panel.name,
+                                               identifier=identifier,
+                                               data=left_panel)
+                self._sink_tree.add_node(node=left_panel_node, parent=parent)
+                new_panels.append(left_panel_node)
+                chosen_panel = left_panel_node
+                for child in left_children:
+                    self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                load_center_count += 1
+
+            self.reset_components()  # does this need to be run?
 
     def add_cables(self):
         # add cables in between all component "edges" (sets of two linked components)
@@ -179,12 +254,6 @@ class Model:
             cable_index += 1
             self._sink_tree = link_into_edge(new_node, edge, self._sink_tree)
         self.reset_components()
-            if isinstance(comp, Source):
-                self.add_source(comp)
-            else:
-                self.add_sink_from_index(comp, self._sink_index)
-        self.add_cables()
-        self.update_dependencies()
 
     def update_dependencies(self):
         # TODO: remove this
@@ -252,30 +321,28 @@ class Model:
                 component_copies.append(comp.data.copy())
         return component_copies
 
-    def add_cables(self):
-        # add cables in between all component "edges" (sets of two linked components)
-        cable_index = get_largest_index(self._sink_tree) + 1
-        edges = get_tree_edges(self._sink_tree)
-        for edge in edges:
-            new_node = tree.Node("Cable " + str(cable_index),
-                                 cable_index,
-                                 data=Cable([0, 0, 0]))
-            new_node.data.name = "Cable " + str(cable_index)
-            cable_index += 1
-            self._sink_tree = link_into_edge(new_node, edge, self._sink_tree)
-        self.reset_components()
-
     def print_tree(self):
         self._sink_tree.show()
 
-    def export_tree(self):
-        self._sink_tree.to_graphviz(filename="../data/graph.gv", shape=u'circle', graph=u'digraph')
+    def export_tree(self, show_cables=True):
+        if show_cables:
+            self._sink_tree.to_graphviz(filename="../data/graph1.gv", shape=u'circle', graph=u'digraph')
+        else:
+            tree = self.copy_tree()
+            cables = list_of_type(tree, Cable)
+            print(cables)
+            for cable in cables:
+                tree.link_past_node(cable.identifier)
+            tree.to_graphviz(filename="../data/graph2.gv", shape=u'circle', graph=u'digraph')
 
     def export_old(self, filepath):
         pass
 
     def copy(self):
         return copy.copy(self)
+
+    def copy_tree(self):
+        return copy.copy(self._sink_tree)
 
 
 class Root(Component):
