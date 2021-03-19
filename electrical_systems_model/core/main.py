@@ -31,7 +31,8 @@ def main():
     model.build()
     build_time = time.time() - start
     model.print_tree()
-    model.export_tree()
+    model.export_tree(show_cables=True)
+    model.export_tree(show_cables=False)
 
     start = time.time()
     root_powers = model.solve(load_cases)

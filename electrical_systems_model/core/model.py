@@ -175,6 +175,39 @@ class Model:
         Splits subtrees of panels into new panels based on number of loads.
         :param max_num_loads: maximum number of loads per panel
         """
+        panels = list_of_type(self._sink_tree, Panel)
+        new_panels = list()
+
+        for panel in panels:
+            load_center_count = 1
+            # we want to check each child of every panel and sort it into a better-fitting new panel if
+            # it does not fit within the maximum distance of its original parent panel
+            if len(self._sink_tree.is_branch(panel.identifier)) > max_num_loads:
+                # split branch in half!
+                children = [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]
+                left_children = children[:len(children) // 2]
+
+                # attach left_children to new panel
+                location = list(map(sum, zip(left_children[0].data.location, [1, 1, 0])))  # prevent zero-length cable
+                left_panel = Panel(location)
+                left_panel.name = panel.data.name + "-" + str(load_center_count)
+                left_panel.group = panel.data.group
+                parent = self._sink_tree.parent(panel.identifier)
+                identifier = get_largest_index(self._sink_tree) + 1
+                # TODO: use default identifiers to avoid confusion
+                left_panel_node = treelib.Node(tag=left_panel.name,
+                                               identifier=identifier,
+                                               data=left_panel)
+                self._sink_tree.add_node(node=left_panel_node, parent=parent)
+                new_panels.append(left_panel_node)
+                chosen_panel = left_panel_node
+                for child in left_children:
+                    self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                load_center_count += 1
+
+        self.reset_components()  # does this need to be run?
+
+    def split_by_current(self, max_current):
         pass
 
     def add_cables(self):
@@ -259,14 +292,25 @@ class Model:
     def print_tree(self):
         self._sink_tree.show()
 
-    def export_tree(self):
-        self._sink_tree.to_graphviz(filename="../data/graph.gv", shape=u'circle', graph=u'digraph')
+    def export_tree(self, show_cables=True):
+        if show_cables:
+            self._sink_tree.to_graphviz(filename="../data/graph1.gv", shape=u'circle', graph=u'digraph')
+        else:
+            tree = self.copy_tree()
+            cables = list_of_type(tree, Cable)
+            print(cables)
+            for cable in cables:
+                tree.link_past_node(cable.identifier)
+            tree.to_graphviz(filename="../data/graph2.gv", shape=u'circle', graph=u'digraph')
 
     def export_old(self, filepath):
         pass
 
     def copy(self):
         return copy.copy(self)
+
+    def copy_tree(self):
+        return copy.copy(self._sink_tree)
 
 
 class Root(Component):
