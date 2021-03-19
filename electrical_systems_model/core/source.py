@@ -1,6 +1,7 @@
 import csv
 import numpy
-
+import pandas as pd
+import numpy as np
 from core.component import Component
 from core.power import Power
 
@@ -14,51 +15,142 @@ class Source(Component):
         pass
 
 
-# TODO: implement electrical-mechanical power transfer
-#   this means we need both a Diesel and a Generator
-class DieselGenerator(Source):
-    def __init__(self, location, rated_power_electric, gen_efficiency=0.965):
-        super().__init__(location, rated_power_electric)
-        self.rated_power = rated_power_electric
-        self.MCR = rated_power_electric / gen_efficiency
+
+class HighSpeedDiesel(Source):
+    engine_row = 2 # This is currently #####
+    engine_data = None
+
+    def __init__(self, location, power):
+        super().__init__(location, power)
+        self.power_brake = power
         self.percent_load = None
         self.SFOC = None
-        self.nox_rate = None
-        self.sox_rate = None
-        self.co2_rate = None
+        self.NOX_rate = None
+        self.SOX_rate = None
+        self.CO2_rate = None
+        self.power = None
+        if not self.engine_data:
+            self.emission_curves()
 
-    def SFOC_curve(self, percent_load):
-        '''
-        This SFOC curve is for Man D&T L21/31 Diesel Generator at 1000rpm
-        The data for the SFOC points can be found on page 139 of the L21/31 project guide
-        '''
+    def emission_curves(self):
+        data = 'Cat_engine_data.csv'
+        engine_data = pd.read_csv(data)
+        engine_data.head()
+        engine_data.set_index('Engine', inplace=True)
 
-        loads = [0.25, 0.50, 0.75, 0.85, 1]
-        fuel_consumption = [216, 196, 192, 191, 193]
-        coefs = numpy.polyfit(loads, fuel_consumption, len(loads) - 1)
-        SFOC = numpy.polyval(coefs, percent_load)
-        return SFOC
+    def solve_emissions(self):
+        self.solve_fuel_consumption()
+        self.solve_NOX()
+        self.solve_CO()
+        self.solve_HC()
+        self.solve_CO2()
+        self.solve_PM()
+        self.solve_CO2_eq()
 
-    def get_SFOC(self, power_wanted):
-        self.percent_load = power_wanted / self.rated_power
-        if self.percent_load > 1:
-            print('Generator is overloaded: ' + str(self.percent_load * 100) + '%')
-        self.SFOC = self.SFOC_curve(self.percent_load)
+    def solve_fuel_consumption(self):
+        SFOC_data = pd.DataFrame(data={'engine_load': [1, 0.9, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.1],
+                                       'SFOC': 608.3 * self.engine_data.iloc[self.engine_row][
+                                           ['100% BSFC', '90% BSFC', '80% BSFC', '75% BSFC', '70% BSFC', '60% BSFC',
+                                            '50% BSFC', '40% BSFC', '30% BSFC', '25% BSFC', '20% BSFC', '10% BSFC']]})
+        SFOC_data_fit = np.polyfit(SFOC_data['engine_load'], SFOC_data['SFOC'], 4)
+        self.SFOC = numpy.polyval(SFOC_data_fit, self.percent_load) # in g/kWh
+        self.fuel_consumption = self.SFOC * self.power # in g/hr
 
-    def get_nox(self, power_wanted):
-        nox_specific_rate = 10  # Using standard NOX generation rate of 10g/kWh from L21/31 Project Guide
-        self.nox_rate = power_wanted * nox_specific_rate  # This gives the nox generation rate in g/hr
-        return self.nox_rate
+    def solve_NOX(self):
+        self.NOX_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
+                                      'NOX': self.engine_data.iloc[self.engine_row][
+                                                 ['100% NOX', '75% NOX', '50% NOX', '25% NOX', '10% NOX']]
+                                             / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+        # 0.7457 converts BHP to BkW
+        self.specific_NOX_rate = np.interp(self.percent_load, np.flip(self.NOX_data['engine_load']), np.flip(self.NOX_data['NOX'])) # in g/kWh
+        self.NOX_rate = self.specific_NOX_rate * self.power # in g/hr
 
     def get_sox(self, power_wanted):
+        # TODO Fix or remove this
         sox_specific_rate = 10  # Using standard SOX generation rate of 10g/kWh from L21/31 Project Guide
         self.sox_rate = power_wanted * sox_specific_rate  # This gives the sox generation rate in g/hr
         return self.sox_rate
 
-    def get_co2(self, power_wanted):
-        co2_specific_rate = 590  # Using standard CO2 generation rate of 10g/kWh from L21/31 Project Guide
-        self.co2_rate = power_wanted * co2_specific_rate  # This gives the co2 generation rate in g/hr
-        return self.co2_rate
+    def solve_CO(self):
+        CO_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
+                                     'CO': self.engine_data.iloc[self.engine_row][['100% CO', '75% CO', '50% CO', '25% CO', '10% CO']]
+                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
+                                                         0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.CO_specific_rate = np.interp(self.percent_load, np.flip(CO_data['engine_load']), np.flip(CO_data['CO'])) # in g/kWh
+        self.CO_rate = self.CO2_specific_rate * self.power # in g/hr
+
+    def solve_HC(self):
+        self.HC_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
+                                     'HC': self.engine_data.iloc[self.engine_row][['100% HC', '75% HC', '50% HC', '25% HC', '10% HC']]
+                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.HC_specific_rate = np.interp(self.percent_load, np.flip(self.HC_data['engine_load']), np.flip(self.HC_data['HC'])) # in g/kWh
+        self.HC_rate = self.HC_specific_rate * self.power # in g/hr
+
+    def solve_CO2(self):
+        self.CO2_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
+                                      'CO2': self.engine_data.iloc[self.engine_row][
+                                                 ['100% CO2', '75% CO2', '50% CO2', '25% CO2', '10% CO2']]
+                                             / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+        CO2_data_fit = np.polyfit(self.CO2_data['engine_load'], self.CO2_data['CO2'], 4)
+        self.CO2_specific_rate = np.polyval(CO2_data_fit, self.percent_load) # in kg/kWh
+        self.CO2_rate = self.CO2_specific_rate * self.power # in kg/hr
+
+    def solve_PM(self):
+        PM_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
+                                     'PM': self.engine_data.iloc[self.engine_row][['100% PM', '75% PM', '50% PM', '25% PM', '10% PM']]
+                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.PM_specific_rate = np.interp(self.percent_load, np.flip(PM_data['engine_load']), np.flip(PM_data['PM'])) # in g/kWh
+        self.PM_rate = self.PM_specific_rate * self.power # in g/hr
+
+    def solve_CO2_eq(self):
+        GWP_CH4 = 25
+        GWP_N2O = 298
+
+        CO2_eq = self.CO2_data['CO2'].reset_index(drop=True) + GWP_CH4 * self.HC_data['HC'].reset_index(
+            drop=True) / 1000 + GWP_N2O * self.NOX_data['NOX'].reset_index(drop=True) / 1000
+        CO2_eq_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1], 'CO2_eq': CO2_eq})
+
+        self.CO2_eq_specific_rate = np.interp(self.percent_load, np.flip(CO2_eq_data['engine_load']), np.flip(CO2_eq_data['CO2_eq'])) # in kg/kWh
+        self.CO2_eq_rate = self.CO2_eq_specific_rate * self.power # kg/hr
+
+class DieselGenerator(HighSpeedDiesel):
+    def __init__(self, location, power, generator_efficiency=0.95):
+        super().__init__(location, power)
+        self.generator_efficiency = generator_efficiency
+
+    def set_power_level(self, electric_power_wanted):
+        self.power = electric_power_wanted / self.generator_efficiency
+        self.percent_load = self.power / self.power_brake
+        if self.percent_load > 1:
+            print('Generator is overloaded: ' + str(self.percent_load * 100) + '%')
+        self.solve_emissions()
+
+
+class DieselMechanical(HighSpeedDiesel):
+    def __init__(self, location, power, shaftline_efficiency=0.99):
+        super().__init__(location, power)
+        self.shaftline_efficiency = shaftline_efficiency
+
+    def set_power_level(self, mechanical_power_wanted):
+        self.power = mechanical_power_wanted / self.shaftline_efficiency
+        self.percent_load = self.power / self.power_brake
+        if self.percent_load > 1:
+            print('Diesel engine is overloaded: ' + str(self.percent_load * 100) + '%')
+        self.solve_emissions()
+
+class DieselShaftGenerator(HighSpeedDiesel):
+    def __init__(self, location, power, shaftline_efficiency_before_alternator=0.99, shaftline_efficiency_after_alternator=0.99, generator_efficiency=0.95):
+        super().__init__(location, power)
+        self.shaftline_efficiency_before_alternator = shaftline_efficiency_before_alternator
+        self.shaftline_efficiency_after_alternator = shaftline_efficiency_after_alternator
+        self.generator_efficiency = generator_efficiency
+
+    def set_power_level(self, mechanical_power_wanted, electrical_power_wanted):
+        self.power = (mechanical_power_wanted/self.shaftline_efficiency_after_alternator + electrical_power_wanted/self.generator_efficiency) / self.shaftline_efficiency_before_alternator
+        self.percent_load = self.power / self.power_brake
+        if self.percent_load > 1:
+            print('Diesel engine is overloaded: ' + str(self.percent_load * 100) + '%')
+        self.solve_emissions()
 
 class LowSpeedDiesel(Source):
     _ENGINE_DATABASE = []
