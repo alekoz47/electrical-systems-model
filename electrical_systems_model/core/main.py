@@ -25,9 +25,11 @@ def format_power(power):
 
 def main():
 
+    epla_path = "../../tests/inputs/EPLA_default.csv"
     load_cases = ["0", "1", "2", "3", "4"]
     model = Model()
     start = time.time()
+    model.load_epla(epla_path)
     model.build()
     build_time = time.time() - start
     model.print_tree()

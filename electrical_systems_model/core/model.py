@@ -23,6 +23,10 @@ class Model:
         main_swbd.name = "Main Switchboard"
         self._sink_tree.create_node(main_swbd.name, 1, 0, main_swbd)
         self.load_case_num = 0
+        self.epla_path = "../data/EPLA_default.csv"    # default EPLA path
+
+    def load_epla(self, new_path):
+        self.epla_path = new_path
 
     def solve(self, load_cases):
         root_powers = list()
@@ -47,9 +51,9 @@ class Model:
 
     def build(self):
         """
-        Builds one line diagram from EPLA. This EPLA is hardcoded to the location ../data/EPLA_input.csv for now.
+        Builds one line diagram from EPLA.
         """
-        epla = import_csv_as_dictlist("../data/EPLA_input.csv")
+        epla = import_csv_as_dictlist(self.epla_path)
         self.initialize_dictlist_to_tree(epla)
         self.add_cables()
         self.update_dependencies()
@@ -326,14 +330,14 @@ class Model:
 
     def export_tree(self, show_cables=True):
         if show_cables:
-            self._sink_tree.to_graphviz(filename="../data/graph1.gv", shape=u'circle', graph=u'digraph')
+            self._sink_tree.to_graphviz(filename="../../tests/outputs/graph1.gv", shape=u'circle', graph=u'digraph')
         else:
             tree = self.copy_tree()
             cables = list_of_type(tree, Cable)
             print(cables)
             for cable in cables:
                 tree.link_past_node(cable.identifier)
-            tree.to_graphviz(filename="../data/graph2.gv", shape=u'circle', graph=u'digraph')
+            tree.to_graphviz(filename="../../tests/outputs/graph2.gv", shape=u'circle', graph=u'digraph')
 
     def export_old(self, filepath):
         pass
