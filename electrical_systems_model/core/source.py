@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from core.component import Component
 from core.power import Power
+from abc import abstractmethod
+
 
 
 class Source(Component):
@@ -13,6 +15,11 @@ class Source(Component):
 
     def get_power_in(self):  # TODO Check that this is correct
         pass
+
+    @abstractmethod
+    def constraint(self):
+        pass
+
 
 
 
@@ -29,14 +36,19 @@ class HighSpeedDiesel(Source):
         self.SOX_rate = None
         self.CO2_rate = None
         self.power = None
+        self.fuel_consumption = None
         if not self.engine_data:
             self.emission_curves()
 
     def emission_curves(self):
-        data = 'Cat_engine_data.csv'
-        engine_data = pd.read_csv(data)
-        engine_data.head()
-        engine_data.set_index('Engine', inplace=True)
+        data = '../data/Cat_engine_data.csv' # Need to add back slashes!!!
+        self.engine_data = pd.read_csv(data)
+        self.engine_data.head()
+        self.engine_data.set_index('Engine', inplace=True)
+
+    @abstractmethod
+    def set_power_level(self, mechanical_power, electrical_power):
+        pass
 
     def solve_emissions(self):
         self.solve_fuel_consumption()
@@ -54,7 +66,7 @@ class HighSpeedDiesel(Source):
                                             '50% BSFC', '40% BSFC', '30% BSFC', '25% BSFC', '20% BSFC', '10% BSFC']]})
         SFOC_data_fit = np.polyfit(SFOC_data['engine_load'], SFOC_data['SFOC'], 4)
         self.SFOC = numpy.polyval(SFOC_data_fit, self.percent_load) # in g/kWh
-        self.fuel_consumption = self.SFOC * self.power # in g/hr
+        self.fuel_consumption = self.SFOC * self.power / (10**6)# in MT/hr
 
     def solve_NOX(self):
         self.NOX_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
@@ -77,7 +89,7 @@ class HighSpeedDiesel(Source):
                                            / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
                                                          0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
         self.CO_specific_rate = np.interp(self.percent_load, np.flip(CO_data['engine_load']), np.flip(CO_data['CO'])) # in g/kWh
-        self.CO_rate = self.CO2_specific_rate * self.power # in g/hr
+        self.CO_rate = self.CO_specific_rate * self.power # in g/hr
 
     def solve_HC(self):
         self.HC_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
@@ -113,17 +125,82 @@ class HighSpeedDiesel(Source):
         self.CO2_eq_specific_rate = np.interp(self.percent_load, np.flip(CO2_eq_data['engine_load']), np.flip(CO2_eq_data['CO2_eq'])) # in kg/kWh
         self.CO2_eq_rate = self.CO2_eq_specific_rate * self.power # kg/hr
 
+    def constraint(self, constraints, index):
+        # TODO this does not work, need separate constraints for electrical and mechanical!!!
+        def overload_constraint(engine_loading):
+            # Need to think of a way to pass the index of the current engine to this function
+            mechanical_power_wanted = engine_loading[2*index] # need to check this
+            electrical_power_wanted = engine_loading[2*index + 1] # need to check this
+            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+            return self.power_brake - self.power
+
+        def zero_load_constraint(engine_loading):
+           mechanical_power_wanted = engine_loading[2*index]  # need to check this
+           electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
+           self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+           return self.power
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': overload_constraint
+        })
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': zero_load_constraint
+        })
+
+        return constraints
+
+
 class DieselGenerator(HighSpeedDiesel):
     def __init__(self, location, power, generator_efficiency=0.95):
         super().__init__(location, power)
         self.generator_efficiency = generator_efficiency
 
-    def set_power_level(self, electric_power_wanted):
+    def set_power_level(self, mechanical_power_wanted, electric_power_wanted):
+
         self.power = electric_power_wanted / self.generator_efficiency
         self.percent_load = self.power / self.power_brake
-        if self.percent_load > 1:
-            print('Generator is overloaded: ' + str(self.percent_load * 100) + '%')
         self.solve_emissions()
+
+
+    def constraint(self, constraints, index):
+
+        def electrical_overload_constraint(engine_loading):
+            # Need to think of a way to pass the index of the current engine to this function
+            mechanical_power_wanted = 0
+            electrical_power_wanted = engine_loading[2*index + 1] # need to check this
+            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+            return self.power_brake - self.power
+
+        def electrical_zero_load_constraint(engine_loading):
+           mechanical_power_wanted = 0
+           electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
+           self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+           return self.power
+
+        def mechanical_load_constraint(engine_loading):
+            mechanical_power_wanted = engine_loading[2*index] # need to check
+            return mechanical_power_wanted
+
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': electrical_overload_constraint
+        })
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': electrical_zero_load_constraint
+        })
+
+        constraints.append({
+            'type': 'eq',
+            'fun': mechanical_load_constraint
+        })
+
+        return constraints
 
 
 class DieselMechanical(HighSpeedDiesel):
@@ -131,12 +208,49 @@ class DieselMechanical(HighSpeedDiesel):
         super().__init__(location, power)
         self.shaftline_efficiency = shaftline_efficiency
 
-    def set_power_level(self, mechanical_power_wanted):
+    def set_power_level(self, mechanical_power_wanted, electrical_power_wanted):
         self.power = mechanical_power_wanted / self.shaftline_efficiency
         self.percent_load = self.power / self.power_brake
-        if self.percent_load > 1:
-            print('Diesel engine is overloaded: ' + str(self.percent_load * 100) + '%')
         self.solve_emissions()
+
+
+    def constraint(self, constraints, index):
+
+        def mechanical_overload_constraint(engine_loading):
+            # Need to think of a way to pass the index of the current engine to this function
+            mechanical_power_wanted = engine_loading[2 * index]
+            electrical_power_wanted = 0
+            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+            return self.power_brake - self.power
+
+        def mechanical_zero_load_constraint(engine_loading):
+            mechanical_power_wanted = engine_loading[2 * index]
+            electrical_power_wanted = 0 # need to check this
+            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+            return self.power
+
+        def electrical_load_constraint(engine_loading):
+            electrical_power_wanted = engine_loading[2 * index + 1]
+            return electrical_power_wanted
+
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': mechanical_overload_constraint
+        })
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': mechanical_overload_constraint
+        })
+
+        constraints.append({
+            'type': 'eq',
+            'fun': electrical_load_constraint
+        })
+
+        return constraints
+
 
 class DieselShaftGenerator(HighSpeedDiesel):
     def __init__(self, location, power, shaftline_efficiency_before_alternator=0.99, shaftline_efficiency_after_alternator=0.99, generator_efficiency=0.95):
@@ -148,9 +262,16 @@ class DieselShaftGenerator(HighSpeedDiesel):
     def set_power_level(self, mechanical_power_wanted, electrical_power_wanted):
         self.power = (mechanical_power_wanted/self.shaftline_efficiency_after_alternator + electrical_power_wanted/self.generator_efficiency) / self.shaftline_efficiency_before_alternator
         self.percent_load = self.power / self.power_brake
-        if self.percent_load > 1:
-            print('Diesel engine is overloaded: ' + str(self.percent_load * 100) + '%')
         self.solve_emissions()
+
+    def bound(self, bounds):
+        mechanical_bound = (0, self.power_brake * self.shaftline_efficiency_before_alternator * self.shaftline_efficiency_after_alternator)
+        bounds.append(mechanical_bound)
+        electrical_bound = (0, self.power_brake * self.shaftline_efficiency_before_alternator * self.generator_efficiency)
+        bounds.append(electrical_bound)
+        return bounds
+
+
 
 class LowSpeedDiesel(Source):
     _ENGINE_DATABASE = []

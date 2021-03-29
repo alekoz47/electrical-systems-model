@@ -1,57 +1,40 @@
+from core.engine_loading import *
+from core.source import *
+
 import time
 
-from core.model import Model
-from core.sink import ElectricalSink
+start = time.time()
 
-from core.transmission import Cable, Transformer
-
-
-def print_component_info(comp):
-    print(comp.name)
-    print("Power in: " + str("%.1f" % abs(comp.power_in.power / 1000)) + " kW")
-    if not isinstance(comp, ElectricalSink):
-        print("Power out: " + str("%.1f" % abs(comp.power_out.power / 1000)) + " kW")
-        print("Power drop: " + str("%.1f" % abs(comp.power_out.power - comp.power_in.power)) + " W")
-    print("Voltage: " + str("%.1f" % abs(comp.power_in.voltage)) + " V")
-    print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
-    if isinstance(comp, Cable):
-        print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
-    print('\n')
+engine_1 = DieselGenerator([0, 0, 0], 100)
+engine_2 = DieselGenerator([0, 0, 0], 200)
+engine_3 = DieselGenerator([0, 0, 0], 300)
+main_engine = DieselMechanical([0, 0, 0], 4000)
+source_list = [engine_1, engine_2, engine_3, main_engine]
 
 
-def format_power(power):
-    return "%.1f" % abs(power.power / 1000) + " kW"
+mechanical_power = 3000
+electrical_power = 550
+
+test_opt = EngineLoadSelector(source_list, mechanical_power, electrical_power)
+
+solve_time = time.time() - start
+
+print(test_opt.result)
+print('Engine 1 Power ', engine_1.power)
+print('Engine 2 Power ', engine_2.power)
+print('Engine 3 Power ', engine_3.power)
+print('Main Engine Power ', main_engine.power)
 
 
-def main():
-
-    epla_path = "../../tests/inputs/EPLA_default.csv"
-    load_cases = ["0", "1", "2", "3", "4"]
-    model = Model()
-    start = time.time()
-    model.load_epla(epla_path)
-    model.build()
-    build_time = time.time() - start
-    model.print_tree()
-    model.export_tree(show_cables=True)
-    model.export_tree(show_cables=False)
-
-    start = time.time()
-    root_powers = model.solve(load_cases)
-    solve_time = time.time() - start
-
-    for case in load_cases:
-        print("Load Case " + case + ": " + format_power(root_powers.pop()))
-    print('\n')
-
-    components = model.export_components()
-    for comp in components:
-        print_component_info(comp)
-
-    print("Model Evaluation Times")
-    print("Build Time: " + str("%.0f" % (build_time * 1000)) + " ms")
-    print("Solve Time: " + str("%.0f" % (solve_time * 1000)) + " ms")
+print('Engine 1 Fuel Consumption ', engine_1.fuel_consumption)
+print('Engine 2 Fuel Consumption ', engine_2.fuel_consumption)
+print('Engine 3 Fuel Consumption ', engine_3.fuel_consumption)
 
 
-if __name__ == "__main__":
-    main()
+# print(test_opt.constraints)
+print(solve_time)
+# print(test_opt.source_list)
+
+
+
+
