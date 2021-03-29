@@ -1,80 +1,75 @@
 import copy
+from abc import ABC, abstractmethod
 
 import numpy
 
 
-class Power:
-    def __init__(self, power):
-        self.power = power
-
+class PowerInterface(ABC):
+    @abstractmethod
     def add(self, power):
-        # TODO: figure out how to add powers of different voltages / frequencies
-        # currently we're just going to cast with matching voltage and power
-        # this may break Transformer behavior
-        # self = type(power).cast(self)
         pass
 
-    def efficiency_loss(self, efficiency):
-        self.power = self.power / efficiency
+    @abstractmethod
+    def apply_efficiency_loss(self, efficiency):
+        pass
 
     def copy(self):
         return copy.copy(self)
 
-    # @classmethod
-    # def cast(cls, power_object):
-    #     power_object.__class__ = cls
-    #     return power_object
 
-
-class ElectricPower(Power):
-    def __init__(self, power, voltage):
-        super().__init__(power)
+class SinglePhaseElectricalPower(PowerInterface):
+    # TODO: refactor to include phase switch to eliminate repeating ourselves
+    # this would include phase (int) in arguments for creation
+    # and would require additional handling in __init__, add, and resistance_loss methods
+    def __init__(self, power, voltage, frequency, power_factor):
         self.voltage = voltage
-        self.current = None
+        self.frequency = frequency
+        self.power_factor = power_factor
+        phase_quadrant = power_factor / abs(power_factor)
+        real_power = power * power_factor / phase_quadrant
+        imag_power = numpy.sqrt(power**2 - real_power**2) * phase_quadrant
+        self.power = complex(real_power, imag_power)
+        self.current = abs(self.power) / self.voltage
 
     def add(self, power):
-        super().add(power)
         self.power = self.power + power.power
+        self.power_factor = self.power.real / abs(self.power)
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
-    def resistance_loss(self, resistance):
-        power_loss = self.current**2 * resistance
+    def apply_efficiency_loss(self, efficiency):
+        self.power = self.power / efficiency
+
+    def apply_resistance_loss(self, resistance):
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
+        current_phase = self.current
+        loss_phase = current_phase**2 * resistance
+        power_loss = loss_phase
         self.power = self.power + power_loss
 
 
-class AlternatingCurrent(ElectricPower):
-    def __init__(self, power, voltage, frequency, power_factor=1):
-        super().__init__(power, voltage)
-        real_power = power * power_factor
-        imag_power = numpy.sqrt(power**2 - real_power**2)
-        self.power = complex(real_power, imag_power)
+class ThreePhaseElectricalPower(PowerInterface):
+    # TODO: refactor to include phase switch to eliminate repeating ourselves
+    # this would include phase (int) in arguments for creation
+    # and would require additional handling in __init__, add, and resistance_loss methods
+    def __init__(self, power, voltage, frequency, power_factor):
+        self.voltage = voltage
         self.frequency = frequency
         self.power_factor = power_factor
+        phase_quadrant = power_factor / abs(power_factor)
+        real_power = power * power_factor / phase_quadrant
+        imag_power = numpy.sqrt(power**2 - real_power**2) * phase_quadrant
+        self.power = complex(real_power, imag_power)
+        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
     def add(self, power):
-        super().add(power)
+        self.power = self.power + power.power
         self.power_factor = self.power.real / abs(self.power)
-
-
-class SinglePhase(AlternatingCurrent):
-    def __init__(self, power, voltage, frequency, power_factor):
-        super().__init__(power, voltage, frequency, power_factor)
-        self.current = abs(self.power) / self.voltage
-
-    def add(self, power):
-        super().add(power)
-        self.current = abs(self.power) / self.voltage
-
-
-class ThreePhase(AlternatingCurrent):
-    def __init__(self, power, voltage, frequency, power_factor):
-        super().__init__(power, voltage, frequency, power_factor)
         self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
 
-    def add(self, power):
-        super().add(power)
-        self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
+    def apply_efficiency_loss(self, efficiency):
+        self.power = self.power / efficiency
 
-    def resistance_loss(self, resistance):
+    def apply_resistance_loss(self, resistance):
         self.current = abs(self.power) / (numpy.sqrt(3) * self.voltage)
         current_phase = self.current / numpy.sqrt(3)
         loss_phase = current_phase**2 * resistance
@@ -82,16 +77,28 @@ class ThreePhase(AlternatingCurrent):
         self.power = self.power + power_loss
 
 
-class DirectCurrent(ElectricPower):
+class DirectElectricalPower(PowerInterface):
+    # TODO: implement this class
     def __init__(self, power, voltage):
-        super().__init__(power, voltage)
+        self.power = power
+        self.voltage = voltage
         self.current = self.power / self.voltage
 
+    def add(self, power):
+        pass
 
-class MechanicalPower(Power):
-    def __init(self, power, rpm):
-        super().__init__(power)
+    def apply_efficiency_loss(self, efficiency):
+        self.power = self.power / efficiency
+
+
+class MechanicalPower(PowerInterface):
+    # TODO: implement this class
+    def __init__(self, power, rpm):
+        self.power = power
         self.rpm = rpm
 
     def add(self, power):
         pass
+
+    def apply_efficiency_loss(self, efficiency):
+        self.power = self.power / efficiency

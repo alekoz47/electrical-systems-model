@@ -3,8 +3,8 @@ import csv
 import numpy
 
 from core.component import Component
-from core.power import ThreePhase
-from core.power import DirectCurrent
+from core.power import ThreePhaseElectricalPower
+from core.power import DirectElectricalPower
 from helpers.math_utils import taxicab_ship_distance
 
 
@@ -31,7 +31,7 @@ class Transformer(Transmission):
         super().get_power_in(load_case_num)
         self.voltage_out = self.power_out.voltage
         self.power_in = self.power_out.copy()
-        self.power_in.efficiency_loss(self.efficiency)
+        self.power_in.apply_efficiency_loss(self.efficiency)
         self.power_in.voltage = self.voltage_in
         return self.power_in
 
@@ -46,7 +46,7 @@ class Panel(Transmission):
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
-        self.power_in.efficiency_loss(self.efficiency)
+        self.power_in.apply_efficiency_loss(self.efficiency)
         return self.power_in
 
 
@@ -75,7 +75,7 @@ class Cable(Transmission):
             # print("solved cable: " + str(self.name))
             self.set_distance()
             self.set_cable_size()
-        self.power_in.resistance_loss(
+        self.power_in.apply_resistance_loss(
             numpy.sqrt(3) * self.resistance)  # TODO Check EE is correct and move the sqrt(3) to a better spot
         return self.power_in
 
@@ -117,10 +117,10 @@ class Cable(Transmission):
         density_of_copper = 8.95  # mt/m^3
         linear_weight = density_of_copper * float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2)
 
-        if isinstance(self.power_in, ThreePhase):
+        if isinstance(self.power_in, ThreePhaseElectricalPower):
             number_of_core = 3
             self.weight = self.num_conductors * number_of_core * linear_weight
-        elif isinstance(self.power_in, DirectCurrent):
+        elif isinstance(self.power_in, DirectElectricalPower):
             number_of_core = 1
             self.weight = self.num_conductors * number_of_core * linear_weight
 
@@ -147,7 +147,7 @@ class VFD(Transmission):
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
         self.power_in = self.power_out.copy()
-        self.power_in.efficiency_loss(self.efficiency)
+        self.power_in.apply_efficiency_loss(self.efficiency)
         return self.power_in
 
 
@@ -158,6 +158,6 @@ class Inverter(Transmission):
 
     def get_power_in(self, load_case_num):
         super().get_power_in(load_case_num)
-        self.power_in = DirectCurrent(self.power_out.power, self.power_out.voltage)
-        self.power_in.efficiency_loss(self.efficiency)
+        self.power_in = DirectElectricalPower(self.power_out.power, self.power_out.voltage)
+        self.power_in.apply_efficiency_loss(self.efficiency)
         return self.power_in
