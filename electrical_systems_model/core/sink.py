@@ -1,6 +1,6 @@
 import numpy
 from core.component import Component
-from core.power import ThreePhase, SinglePhase
+from core.power import ThreePhaseElectricalPower, SinglePhaseElectricalPower
 
 
 class Sink(Component):
@@ -36,9 +36,9 @@ class ElectricalSink(Sink):
         if self.phase == 0:
             pass
         elif self.phase == 1:
-            self.power_in = SinglePhase(self.power, self.voltage, self.frequency, self.power_factor)
+            self.power_in = SinglePhaseElectricalPower(self.power, self.voltage, self.frequency, self.power_factor)
         elif self.phase == 3:
-            self.power_in = ThreePhase(self.power, self.voltage, self.frequency, self.power_factor)
+            self.power_in = ThreePhaseElectricalPower(self.power, self.voltage, self.frequency, self.power_factor)
         else:
             print("Please enter a valid phase (DC: 0, Single: 1, Triple: 3)")
         return self.power_in

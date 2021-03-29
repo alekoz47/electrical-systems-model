@@ -3,7 +3,7 @@ import numpy
 import pandas as pd
 import numpy as np
 from core.component import Component
-from core.power import Power
+from core.power import PowerInterface
 
 
 class Source(Component):
