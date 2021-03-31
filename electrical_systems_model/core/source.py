@@ -241,7 +241,7 @@ class DieselMechanical(HighSpeedDiesel):
 
         constraints.append({
             'type': 'ineq',
-            'fun': mechanical_overload_constraint
+            'fun': mechanical_zero_load_constraint
         })
 
         constraints.append({
