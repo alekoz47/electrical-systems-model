@@ -159,14 +159,11 @@ class DieselGenerator(HighSpeedDiesel):
         self.generator_efficiency = generator_efficiency
 
     def set_power_level(self, mechanical_power_wanted, electric_power_wanted):
-
         self.power = electric_power_wanted / self.generator_efficiency
         self.percent_load = self.power / self.power_brake
         self.solve_emissions()
 
-
     def constraint(self, constraints, index):
-
         def electrical_overload_constraint(engine_loading):
             # Need to think of a way to pass the index of the current engine to this function
             mechanical_power_wanted = 0
@@ -175,14 +172,19 @@ class DieselGenerator(HighSpeedDiesel):
             return self.power_brake - self.power
 
         def electrical_zero_load_constraint(engine_loading):
-           mechanical_power_wanted = 0
-           electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
-           self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
-           return self.power
+            mechanical_power_wanted = 0
+            electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
+            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
+            return self.power
 
-        def mechanical_load_constraint(engine_loading):
+        def mechanical_load_constraint_1(engine_loading):
             mechanical_power_wanted = engine_loading[2*index] # need to check
-            return mechanical_power_wanted
+            return 1-mechanical_power_wanted
+
+        def mechanical_load_constraint_2(engine_loading):
+            mechanical_power_wanted = engine_loading[2*index] # need to check
+            return 1+mechanical_power_wanted
+
 
 
         constraints.append({
@@ -196,8 +198,13 @@ class DieselGenerator(HighSpeedDiesel):
         })
 
         constraints.append({
-            'type': 'eq',
-            'fun': mechanical_load_constraint
+            'type': 'ineq',
+            'fun': mechanical_load_constraint_1
+        })
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': mechanical_load_constraint_2
         })
 
         return constraints
@@ -212,7 +219,6 @@ class DieselMechanical(HighSpeedDiesel):
         self.power = mechanical_power_wanted / self.shaftline_efficiency
         self.percent_load = self.power / self.power_brake
         self.solve_emissions()
-
 
     def constraint(self, constraints, index):
 

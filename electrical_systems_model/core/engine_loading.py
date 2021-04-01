@@ -1,8 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from core.source import DieselShaftGenerator
-
 
 def obj_func(engine_loading, source_list):
     fuel_burn = 0
@@ -30,9 +28,9 @@ class EngineLoadSelector():
         self.constraints = []
         self.result = None
 
-        self.set_power_levels()
+        self.optimize_engine_loading()
 
-    def set_power_levels(self):
+    def optimize_engine_loading(self):
         self.set_constraints()
         self.optimizer()
 
@@ -74,6 +72,6 @@ class EngineLoadSelector():
             x0 = [0] * 2 * len(self.source_list), #array of zeros twice the length of the source list
             constraints=self.constraints,
             method='SLSQP',
-            options={'maxiter': 100, 'ftol': 1e0}
+            options={'maxiter': 100, 'ftol': 1e-12}
         )
 
