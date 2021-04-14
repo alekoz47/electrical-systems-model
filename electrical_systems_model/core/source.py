@@ -125,32 +125,9 @@ class HighSpeedDiesel(Source):
         self.CO2_eq_specific_rate = np.interp(self.percent_load, np.flip(CO2_eq_data['engine_load']), np.flip(CO2_eq_data['CO2_eq'])) # in kg/kWh
         self.CO2_eq_rate = self.CO2_eq_specific_rate * self.power # kg/hr
 
+    @abstractmethod
     def constraint(self, constraints, index):
-        # TODO this does not work, need separate constraints for electrical and mechanical!!!
-        def overload_constraint(engine_loading):
-            # Need to think of a way to pass the index of the current engine to this function
-            mechanical_power_wanted = engine_loading[2*index] # need to check this
-            electrical_power_wanted = engine_loading[2*index + 1] # need to check this
-            self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
-            return self.power_brake - self.power
-
-        def zero_load_constraint(engine_loading):
-           mechanical_power_wanted = engine_loading[2*index]  # need to check this
-           electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
-           self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
-           return self.power
-
-        constraints.append({
-            'type': 'ineq',
-            'fun': overload_constraint
-        })
-
-        constraints.append({
-            'type': 'ineq',
-            'fun': zero_load_constraint
-        })
-
-        return constraints
+        pass
 
 
 class DieselGenerator(HighSpeedDiesel):

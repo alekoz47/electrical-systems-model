@@ -29,6 +29,7 @@ class EngineLoadSelector():
         self.result = None
 
         self.optimize_engine_loading()
+        print(self.result.fun)
 
     def optimize_engine_loading(self):
         self.set_constraints()
@@ -58,18 +59,13 @@ class EngineLoadSelector():
         for index, engine in enumerate(self.source_list):
             self.constraints = engine.constraint(self.constraints, index)
 
-    def set_bounds(self):
-        # Sets bounds so no engine is overloaded
-        for engine in self.source_list:
-            self.bounds = engine.bound(self.bounds)
-
     def optimizer(self):
         # There are two values in the list for each engine, first is the provided mechanical power and the second is the provided electrical power
         # noinspection PyTypeChecker
         self.result = minimize(
             fun=obj_func,
             args=self.source_list,
-            x0 = [0] * 2 * len(self.source_list), #array of zeros twice the length of the source list
+            x0=[0] * 2 * len(self.source_list), #array of zeros twice the length of the source list
             constraints=self.constraints,
             method='SLSQP',
             options={'maxiter': 100, 'ftol': 1e-12}
