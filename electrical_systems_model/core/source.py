@@ -212,9 +212,14 @@ class DieselMechanical(HighSpeedDiesel):
             self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
             return self.power
 
-        def electrical_load_constraint(engine_loading):
+        def electrical_load_constraint_1(engine_loading):
             electrical_power_wanted = engine_loading[2 * index + 1]
-            return electrical_power_wanted
+            return 1-electrical_power_wanted
+
+        def electrical_load_constraint_2(engine_loading):
+            electrical_power_wanted = engine_loading[2 * index + 1]
+            return 1+electrical_power_wanted
+
 
 
         constraints.append({
@@ -228,8 +233,13 @@ class DieselMechanical(HighSpeedDiesel):
         })
 
         constraints.append({
-            'type': 'eq',
-            'fun': electrical_load_constraint
+            'type': 'ineq',
+            'fun': electrical_load_constraint_1
+        })
+
+        constraints.append({
+            'type': 'ineq',
+            'fun': electrical_load_constraint_2
         })
 
         return constraints

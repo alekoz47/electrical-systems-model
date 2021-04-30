@@ -20,16 +20,16 @@ def obj_func(engine_loading, source_list):
 
 
 class EngineLoadSelector():
-    def __init__(self, source_list, mechanical_power, electrical_power):
+    def __init__(self, source_list, mechanical_power, electrical_power, initial_guess):
         self.source_list = source_list
         self.mechanical_power = mechanical_power
         self.electrical_power = electrical_power
         self.bounds = []
         self.constraints = []
+        self.initial_guess = initial_guess
         self.result = None
 
         self.optimize_engine_loading()
-        print(self.result.fun)
 
     def optimize_engine_loading(self):
         self.set_constraints()
@@ -65,7 +65,7 @@ class EngineLoadSelector():
         self.result = minimize(
             fun=obj_func,
             args=self.source_list,
-            x0=[0] * 2 * len(self.source_list), #array of zeros twice the length of the source list
+            x0=self.initial_guess, #array of zeros twice the length of the source list
             constraints=self.constraints,
             method='SLSQP',
             options={'maxiter': 100, 'ftol': 1e-12}
