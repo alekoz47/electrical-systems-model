@@ -53,6 +53,10 @@ class HighSpeedDiesel(Source):
     def set_power_level(self, mechanical_power, electrical_power):
         pass
 
+    def get_emissions(self):
+        self.solve_emissions()
+        return self.CO2_eq_rate
+
     def solve_emissions(self):
         self.solve_fuel_consumption()
         self.solve_NOX()
