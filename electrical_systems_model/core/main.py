@@ -16,7 +16,14 @@ def print_component_info(comp):
     print("Current: " + str("%.1f" % abs(comp.power_in.current)) + " A")
     if isinstance(comp, Cable):
         print("Resistance: " + str("%.6f" % comp.resistance) + " Ohms")
-    print('\n')
+    print("")
+
+
+def print_cable_size(cable):
+    print(cable.name)
+    print(cable.selected_size)
+    print(cable.num_conductors)
+    print("")
 
 
 def format_power(power):
@@ -25,23 +32,29 @@ def format_power(power):
 
 def main():
 
-    epla_path = "../../tests/inputs/EPLA_default.csv"
-    load_cases = ["0", "1", "2", "3", "4"]
+    epla_path = "../../tests/inputs/EPLA_example_1.csv"
+    load_cases = [0, 1, 2, 3, 4]
     model = Model()
     start = time.time()
     model.load_epla(epla_path)
     model.build()
     build_time = time.time() - start
     model.print_tree()
-    model.export_tree(show_cables=True)
-    model.export_tree(show_cables=False)
 
     start = time.time()
     root_powers = model.solve(load_cases)
     solve_time = time.time() - start
 
+    cables = model.export_cables()
+    print(cables)
+    for cable in cables:
+        print_cable_size(cable)
+
+    model.export_tree(show_cables=True)
+    model.export_tree(show_cables=False)
+
     for case in load_cases:
-        print("Load Case " + case + ": " + format_power(root_powers.pop()))
+        print("Load Case " + str(case) + ": " + format_power(root_powers.pop()))
     print('\n')
 
     components = model.export_components()

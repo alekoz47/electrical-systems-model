@@ -1,4 +1,4 @@
 SWBS,Name,Longitudinal Location,Transverse Location,Vertical Location,Power,Voltage,Power Factor,Load Case 1,Load Case 2,Load Case 3,Load Case 4
-100,Test 1,1,2,3,100,440,1,0.25,0.7,1,0.5
-100,Test 2,400,5,6,250,440,0.8,1,1,1,1
-200,Test 3,10,8,9,500,440,0.7,0.1,0.5,0.35,0.6
+100,Load 1,1,2,3,100,440,1,0.25,0.7,1,0.5
+100,Load 2,400,5,6,250,440,0.8,1,1,1,1
+200,Load 3,10,8,9,500,440,0.7,0.1,0.5,0.35,0.6

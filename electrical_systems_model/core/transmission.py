@@ -53,7 +53,6 @@ class Panel(Transmission):
 class Cable(Transmission):
     _CABLE_SIZE = []
     flag = 0
-    selected_size = 0
 
     def __init__(self, location):
         super().__init__(location)
@@ -64,6 +63,8 @@ class Cable(Transmission):
         self.weight = 0  # TODO Move to parent class????
         self.length = 0
         self.voltage_drop_percent = 0
+        self.selected_size = 0
+        self.num_conductors = 0
         if not bool(self._CABLE_SIZE):
             self.load_data()
 
@@ -87,8 +88,8 @@ class Cable(Transmission):
                 self._CABLE_SIZE.append(line)
 
     def set_cable_size(self):
-        self.num_conductors = 1
         selected_size_index = -1
+        self.num_conductors = 1
 
         while selected_size_index == -1:
             selected_size_index = self.find_cable_size()
@@ -123,6 +124,8 @@ class Cable(Transmission):
         elif isinstance(self.power_in, DirectElectricalPower):
             number_of_core = 1
             self.weight = self.num_conductors * number_of_core * linear_weight
+
+        self.selected_size = str(self._CABLE_SIZE[selected_size_index]["area"])
 
     def find_cable_size(self):
         for index, cable_size in enumerate(self._CABLE_SIZE):
