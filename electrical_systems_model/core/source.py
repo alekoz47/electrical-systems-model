@@ -19,11 +19,15 @@ class Source(Component):
     def constraint(self):
         pass
 
+    @abstractmethod
+    def type_name(self):
+        pass
+
 
 
 
 class HighSpeedDiesel(Source):
-    engine_row = 2 # This is currently #####
+    engine_row = 0 # This is currently #####
     engine_data = None
 
     def __init__(self, location, power):
@@ -59,13 +63,16 @@ class HighSpeedDiesel(Source):
         self.solve_CO2_eq()
 
     def solve_fuel_consumption(self):
-        SFOC_data = pd.DataFrame(data={'engine_load': [1, 0.9, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.1],
+        self.SFOC_data = pd.DataFrame(data={'engine_load': [1, 0.9, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.1],
                                        'SFOC': 608.3 * self.engine_data.iloc[self.engine_row][
                                            ['100% BSFC', '90% BSFC', '80% BSFC', '75% BSFC', '70% BSFC', '60% BSFC',
                                             '50% BSFC', '40% BSFC', '30% BSFC', '25% BSFC', '20% BSFC', '10% BSFC']]})
-        SFOC_data_fit = np.polyfit(SFOC_data['engine_load'], SFOC_data['SFOC'], 4)
+        SFOC_data_fit = np.polyfit(self.SFOC_data['engine_load'], self.SFOC_data['SFOC'], 2)
         self.SFOC = numpy.polyval(SFOC_data_fit, self.percent_load) # in g/kWh
-        self.fuel_consumption = self.SFOC * self.power / (10**6)# in MT/hr
+
+        # self.SFOC = np.interp(self.percent_load, np.flip(self.SFOC_data['engine_load']), np.flip(self.SFOC_data['SFOC']))
+
+        self.fuel_consumption = self.SFOC * self.power / (10**6) # in MT/hr
 
     def solve_NOX(self):
         self.NOX_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
@@ -114,6 +121,8 @@ class HighSpeedDiesel(Source):
         self.PM_rate = self.PM_specific_rate * self.power # in g/hr
 
     def solve_CO2_eq(self):
+        # GWP come from Table ES-1 from Inventory of US Greenhouse Gas Emissions and Sinks: 1990-2019
+
         GWP_CH4 = 25
         GWP_N2O = 298
 
@@ -128,6 +137,8 @@ class HighSpeedDiesel(Source):
     def constraint(self, constraints, index):
         pass
 
+    def type_name(self):
+        pass
 
 class DieselGenerator(HighSpeedDiesel):
     def __init__(self, location, power, generator_efficiency=0.95):
@@ -185,6 +196,8 @@ class DieselGenerator(HighSpeedDiesel):
 
         return constraints
 
+    def type_name(self):
+        return 'Diesel Generator'
 
 class DieselMechanical(HighSpeedDiesel):
     def __init__(self, location, power, shaftline_efficiency=0.99):
@@ -243,6 +256,8 @@ class DieselMechanical(HighSpeedDiesel):
 
         return constraints
 
+    def type_name(self):
+        return 'Diesel Mechanical'
 
 class DieselShaftGenerator(HighSpeedDiesel):
     def __init__(self, location, power, shaftline_efficiency_before_alternator=0.99, shaftline_efficiency_after_alternator=0.99, generator_efficiency=0.95):
@@ -263,6 +278,8 @@ class DieselShaftGenerator(HighSpeedDiesel):
         bounds.append(electrical_bound)
         return bounds
 
+    def type_name(self):
+        return 'Shaft Generator'
 
 
 class LowSpeedDiesel(Source):

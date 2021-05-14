@@ -102,10 +102,10 @@ class Cable(Transmission):
         self.num_conductors -= 1  # subtract one for now
 
         # This section calculates the resistance per m using the cross sectional area of the conductors
-        resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
+        `resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
         resistivity_temp = 20  # degree C
         rated_temp = 85  # degree C
-        alpha_temp_coef = 0.00429  # TODO Find source for Alpha
+        alpha_temp_coef = 0.00429  # TODO Find source for Alpha`
         resistivity_copper_rated_temp = resistivity_copper_20C * (
                     1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
         resistance_per_meter = resistivity_copper_rated_temp / (

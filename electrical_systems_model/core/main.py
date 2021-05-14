@@ -55,28 +55,35 @@ engine_3 = DieselGenerator([0, 0, 0], 1)
 
 
 
-harbor = {
-    'Name' : 'Harbor',
-    'Mechanical Power' : 1000,
-    'Electrical Power' : 0,
-    'Use Factor' : 0.25
-    }
+
 
 at_sea = {
     'Name' : 'At Sea',
-    'Mechanical Power' : 500,
-    'Electrical Power' : 0,
-    'Use Factor' : 0.75
+    'Mechanical Power': 0,
+    'Electrical Power': 1000,
+    'Use Factor': 0.75
     }
 
-generator_1 = DieselMechanical([0, 0, 0], 1)
-generator_2 = DieselMechanical([0, 0, 0], 1)
-generator_3 = DieselMechanical([0, 0, 0], 1)
+harbor = {
+    'Name': 'Harbor',
+    'Mechanical Power': 0,
+    'Electrical Power': 500,
+    'Use Factor': 0.15
+    }
+
+at_dock = {
+    'Name': 'Dock',
+    'Mechanical Power': 0,
+    'Electrical Power': 100,
+    'Use Factor': 0.10
+    }
+
+generator_1 = DieselGenerator([0, 0, 0], 1)
+generator_2 = DieselGenerator([0, 0, 0], 1)
+generator_3 = DieselGenerator([0, 0, 0], 1)
 
 source_list = [generator_1, generator_2, generator_3]
-
-load_cases = [harbor, at_sea]
-
+load_cases = [at_sea, harbor, at_dock]
 test_rater = EngineRatingSelector(source_list, load_cases)
 
 # print(test_rater.result)
