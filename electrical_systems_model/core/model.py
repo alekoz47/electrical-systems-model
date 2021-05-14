@@ -1,4 +1,5 @@
 import copy
+import re
 
 import treelib
 
@@ -35,6 +36,7 @@ class Model:
         return root_powers
 
     def solve_case(self, load_case_num):
+        print(load_case_num)
         self.load_case_num = load_case_num
         self.reset_components()
 
@@ -80,14 +82,13 @@ class Model:
         load_center_count = 1
         comp_id = 2
         for group in groups.values():
-
             # place panel 1m transverse and 1m longitudinal from first component at same vertical location
             first_component = group[0].copy()
             first_location = [float(first_component["Longitudinal Location"]) + 1,
                               float(first_component["Transverse Location"]) + 1,
                               float(first_component["Vertical Location"])]
             panel = Panel(first_location)
-            panel.name = "Load Center " + str(load_center_count)
+            panel.name = "Load Center " + group[0]["SWBS"]
             panel.group = group
             self._sink_tree.create_node(panel.name, comp_id, 1, panel)
             load_center_id = comp_id
@@ -132,6 +133,22 @@ class Model:
         # distance limit on its other components. If one component does not meet this criterion, we create a new panel.
         # This third method is not great but will do for the current scope.
 
+        def count(name):
+            test = re.findall(r'\d+', name)
+            res = list(map(int, test))
+            if len(res) < 2:
+                return -1
+            else:
+                return res[1]
+
+        def increment_count(name):
+            counter = count(name)
+            if counter < 0:
+                return name + "-1"
+            else:
+                return name.replace("-" + str(counter),
+                                    "-" + str(counter + 1))
+
         panels = list_of_type(self._sink_tree, Panel)
         new_panels = list()
 
@@ -144,6 +161,7 @@ class Model:
                     # keep association with current panel
                     pass
                 else:
+                    # TODO: fix multiple associations with new panel reference
                     chosen_panel = None
                     # attach to panel of same hierarchy with better fit
                     if new_panels:
@@ -157,7 +175,7 @@ class Model:
                         # choose new panel
                         location = list(map(sum, zip(child.data.location, [1, 1, 0])))  # prevent zero-length cable
                         new_panel = Panel(location)
-                        new_panel.name = panel.data.name + "-" + str(load_center_count)
+                        new_panel.name = increment_count(panel.data.name)
                         new_panel.group = panel.data.group
                         parent = self._sink_tree.parent(panel.identifier)
                         identifier = get_largest_index(self._sink_tree) + 1
@@ -322,6 +340,18 @@ class Model:
         component_copies = list()
         for comp in component_references:
             if isinstance(comp.data, Component) and not isinstance(comp.data, Root):
+                component_copies.append(comp.data.copy())
+        return component_copies
+
+    def export_cables(self):
+        """
+        Exports all cable components in tree to list of components by copying.
+        :return: list of Cable
+        """
+        component_references = self._sink_tree.all_nodes()
+        component_copies = list()
+        for comp in component_references:
+            if isinstance(comp.data, Cable):
                 component_copies.append(comp.data.copy())
         return component_copies
 

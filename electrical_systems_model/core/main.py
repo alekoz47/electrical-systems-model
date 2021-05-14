@@ -83,17 +83,3 @@ test_rater = EngineRatingSelector(source_list, load_cases)
 
 solve_time = time.time() - start
 print('Solve Time (s):', solve_time)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
