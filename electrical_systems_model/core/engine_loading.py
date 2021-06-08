@@ -67,7 +67,7 @@ class EngineLoadSelector():
             args=self.source_list,
             x0=self.initial_guess, #array of zeros twice the length of the source list
             constraints=self.constraints,
-            method='SLSQP',
+            method='con',
             options={'maxiter': 100, 'ftol': 1e-12}
         )
 

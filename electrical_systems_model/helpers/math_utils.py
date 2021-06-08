@@ -5,7 +5,8 @@ def taxicab_ship_distance(loc1, loc2):
     :param loc2: list of length 3
     :return: distance
     """
-
+    # TODO This not the taxicab distance and we should change the name
+    
     # This finds the longitudinal distance in meters between the parent and child of the cable
     long_distance = loc2[0] - loc1[0]
 
