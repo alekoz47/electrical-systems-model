@@ -363,8 +363,7 @@ class LowSpeedDiesel(Source):
                         engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L4']
                 max_MCR = num_cylinder * (engine['L1'] - engine['L3']) / (
                         engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L3']
-                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine[
-                    'nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
+                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine['nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
                     self.potential_engine.append(engine)
                     list_of_cylinder.append(num_cylinder)
         self.potential_engine = self.append_od(self.potential_engine, list_of_cylinder, 'Cylinders')

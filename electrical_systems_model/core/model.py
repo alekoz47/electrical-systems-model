@@ -9,7 +9,7 @@ from core.transmission import Cable, Panel
 from core.component import Component
 from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index, list_of_type
 from helpers.input_utils import group_dictlist_by_key, import_csv_as_dictlist
-from helpers.math_utils import taxicab_ship_distance
+from helpers.math_utils import estimate_cable_length
 
 
 class Model:
@@ -157,7 +157,7 @@ class Model:
             # we want to check each child of every panel and sort it into a better-fitting new panel if
             # it does not fit within the maximum distance of its original parent panel
             for child in [self._sink_tree.get_node(nid) for nid in self._sink_tree.is_branch(panel.identifier)]:
-                if taxicab_ship_distance(child.data.location, panel.data.location) < max_distance:
+                if estimate_cable_length(child.data.location, panel.data.location) < max_distance:
                     # keep association with current panel
                     pass
                 else:
@@ -167,7 +167,7 @@ class Model:
                     if new_panels:
                         # attempt to choose existing panel
                         for new_panel in new_panels:
-                            if taxicab_ship_distance(child.data.location, new_panel.data.location) < max_distance \
+                            if estimate_cable_length(child.data.location, new_panel.data.location) < max_distance \
                                     and new_panel.data.group == panel.data.group:
                                 chosen_panel = new_panel
                     else:

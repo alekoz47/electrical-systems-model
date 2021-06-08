@@ -1,11 +1,10 @@
-def taxicab_ship_distance(loc1, loc2):
+def estimate_cable_length(loc1, loc2):
     """
-    Calculates taxicab distance between two locations on ship. Assumes cables run to centerline first.
+    Estimates cable length between two locations on the vessel. Assumes cables run to centerline first.
     :param loc1: list of length 3
     :param loc2: list of length 3
     :return: distance
     """
-    # TODO This not the taxicab distance and we should change the name
     
     # This finds the longitudinal distance in meters between the parent and child of the cable
     long_distance = loc2[0] - loc1[0]

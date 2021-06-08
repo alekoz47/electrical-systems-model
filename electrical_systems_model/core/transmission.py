@@ -1,11 +1,10 @@
 import csv
-
 import numpy
 
 from core.component import Component
 from core.power import ThreePhaseElectricalPower
 from core.power import DirectElectricalPower
-from helpers.math_utils import taxicab_ship_distance
+from helpers.math_utils import estimate_cable_length
 
 
 class Transmission(Component):
@@ -102,7 +101,7 @@ class Cable(Transmission):
         self.num_conductors -= 1  # subtract one for now
 
         # This section calculates the resistance per m using the cross sectional area of the conductors
-        `resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
+        resistivity_copper_20C = 1.724 * 10 ** (-8)  # Ohm*m TODO Find source for resistivity
         resistivity_temp = 20  # degree C
         rated_temp = 85  # degree C
         alpha_temp_coef = 0.00429  # TODO Find source for Alpha`
@@ -139,7 +138,7 @@ class Cable(Transmission):
     def set_distance(self):
         start_location = self.get_parents().location
         end_location = self.get_children()[0].location
-        self.length = taxicab_ship_distance(start_location, end_location)
+        self.length = estimate_cable_length(start_location, end_location)
 
 
 class VFD(Transmission):
