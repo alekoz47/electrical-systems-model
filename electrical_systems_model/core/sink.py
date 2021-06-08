@@ -1,4 +1,3 @@
-import numpy
 from core.component import Component
 from core.power import ThreePhaseElectricalPower, SinglePhaseElectricalPower
 

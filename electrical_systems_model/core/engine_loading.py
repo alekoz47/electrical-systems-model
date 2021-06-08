@@ -6,9 +6,8 @@ def obj_func(engine_loading, source_list):
     fuel_burn = 0
     for index, engine in enumerate(source_list):
         # calculate the fuel burn of each engine and add it to the sum
-        # TODO I don't think this working, engine loading is not be properly applied
-        mechanical_load_wanted = engine_loading[2*index]
-        electrical_load_wanted = engine_loading[2*index + 1]
+        mechanical_load_wanted = engine_loading[2 * index]
+        electrical_load_wanted = engine_loading[2 * index + 1]
         engine.set_power_level(mechanical_load_wanted, electrical_load_wanted)
         # remember to multiply by the index by 2 when getting engine loading
         # need to sum mechanical and electrical power before calling method
@@ -19,7 +18,7 @@ def obj_func(engine_loading, source_list):
     return fuel_burn
 
 
-class EngineLoadSelector():
+class EngineLoadSelector:
     def __init__(self, source_list, mechanical_power, electrical_power, initial_guess):
         self.source_list = source_list
         self.mechanical_power = mechanical_power
@@ -47,8 +46,8 @@ class EngineLoadSelector():
             return self.electrical_power - np.sum(engine_loading[1::2])
 
         self.constraints.append({
-            'type' : 'eq',
-            'fun' : mechanical_constraint
+            'type': 'eq',
+            'fun': mechanical_constraint
         })
 
         self.constraints.append({
@@ -60,14 +59,14 @@ class EngineLoadSelector():
             self.constraints = engine.constraint(self.constraints, index)
 
     def optimizer(self):
-        # There are two values in the list for each engine, first is the provided mechanical power and the second is the provided electrical power
+        # There are two values in the list for each engine, first is the provided mechanical power and the second is
+        # the provided electrical power
         # noinspection PyTypeChecker
         self.result = minimize(
             fun=obj_func,
             args=self.source_list,
-            x0=self.initial_guess, #array of zeros twice the length of the source list
+            x0=self.initial_guess,  # array of zeros twice the length of the source list
             constraints=self.constraints,
             method='con',
             options={'maxiter': 100, 'ftol': 1e-12}
         )
-

@@ -1,10 +1,11 @@
 import csv
+from abc import abstractmethod
+
 import numpy
 import pandas as pd
 import numpy as np
+
 from core.component import Component
-from abc import abstractmethod
-from core.power import PowerInterface
 
 
 class Source(Component):
@@ -24,10 +25,8 @@ class Source(Component):
         pass
 
 
-
-
 class HighSpeedDiesel(Source):
-    engine_row = 0 # This is currently #####
+    engine_row = 0  # This is currently #####
     engine_data = None
 
     def __init__(self, location, power):
@@ -44,7 +43,7 @@ class HighSpeedDiesel(Source):
             self.emission_curves()
 
     def emission_curves(self):
-        data = '../data/Cat_engine_data.csv' # Need to add back slashes!!!
+        data = '../data/Cat_engine_data.csv'  # Need to add back slashes!!!
         self.engine_data = pd.read_csv(data)
         self.engine_data.head()
         self.engine_data.set_index('Engine', inplace=True)
@@ -68,24 +67,29 @@ class HighSpeedDiesel(Source):
 
     def solve_fuel_consumption(self):
         self.SFOC_data = pd.DataFrame(data={'engine_load': [1, 0.9, 0.8, 0.75, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.1],
-                                       'SFOC': 608.3 * self.engine_data.iloc[self.engine_row][
-                                           ['100% BSFC', '90% BSFC', '80% BSFC', '75% BSFC', '70% BSFC', '60% BSFC',
-                                            '50% BSFC', '40% BSFC', '30% BSFC', '25% BSFC', '20% BSFC', '10% BSFC']]})
+                                            'SFOC': 608.3 * self.engine_data.iloc[self.engine_row][
+                                                ['100% BSFC', '90% BSFC', '80% BSFC', '75% BSFC', '70% BSFC',
+                                                 '60% BSFC',
+                                                 '50% BSFC', '40% BSFC', '30% BSFC', '25% BSFC', '20% BSFC',
+                                                 '10% BSFC']]})
         SFOC_data_fit = np.polyfit(self.SFOC_data['engine_load'], self.SFOC_data['SFOC'], 2)
-        self.SFOC = numpy.polyval(SFOC_data_fit, self.percent_load) # in g/kWh
+        self.SFOC = numpy.polyval(SFOC_data_fit, self.percent_load)  # in g/kWh
 
         # self.SFOC = np.interp(self.percent_load, np.flip(self.SFOC_data['engine_load']), np.flip(self.SFOC_data['SFOC']))
 
-        self.fuel_consumption = self.SFOC * self.power / (10**6) # in MT/hr
+        self.fuel_consumption = self.SFOC * self.power / (10 ** 6)  # in MT/hr
 
     def solve_NOX(self):
         self.NOX_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
-                                      'NOX': self.engine_data.iloc[self.engine_row][
-                                                 ['100% NOX', '75% NOX', '50% NOX', '25% NOX', '10% NOX']]
-                                             / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+                                           'NOX': self.engine_data.iloc[self.engine_row][
+                                                      ['100% NOX', '75% NOX', '50% NOX', '25% NOX', '10% NOX']]
+                                                  / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
+                                                                0.7457 * self.engine_data.iloc[self.engine_row][
+                                                                    'BHP'])})
         # 0.7457 converts BHP to BkW
-        self.specific_NOX_rate = np.interp(self.percent_load, np.flip(self.NOX_data['engine_load']), np.flip(self.NOX_data['NOX'])) # in g/kWh
-        self.NOX_rate = self.specific_NOX_rate * self.power # in g/hr
+        self.specific_NOX_rate = np.interp(self.percent_load, np.flip(self.NOX_data['engine_load']),
+                                           np.flip(self.NOX_data['NOX']))  # in g/kWh
+        self.NOX_rate = self.specific_NOX_rate * self.power  # in g/hr
 
     def get_sox(self, power_wanted):
         # TODO Fix or remove this
@@ -95,34 +99,44 @@ class HighSpeedDiesel(Source):
 
     def solve_CO(self):
         CO_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
-                                     'CO': self.engine_data.iloc[self.engine_row][['100% CO', '75% CO', '50% CO', '25% CO', '10% CO']]
+                                     'CO': self.engine_data.iloc[self.engine_row][
+                                               ['100% CO', '75% CO', '50% CO', '25% CO', '10% CO']]
                                            / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
-                                                         0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
-        self.CO_specific_rate = np.interp(self.percent_load, np.flip(CO_data['engine_load']), np.flip(CO_data['CO'])) # in g/kWh
-        self.CO_rate = self.CO_specific_rate * self.power # in g/hr
+                                                         0.7457 * self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.CO_specific_rate = np.interp(self.percent_load, np.flip(CO_data['engine_load']),
+                                          np.flip(CO_data['CO']))  # in g/kWh
+        self.CO_rate = self.CO_specific_rate * self.power  # in g/hr
 
     def solve_HC(self):
         self.HC_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
-                                     'HC': self.engine_data.iloc[self.engine_row][['100% HC', '75% HC', '50% HC', '25% HC', '10% HC']]
-                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
-        self.HC_specific_rate = np.interp(self.percent_load, np.flip(self.HC_data['engine_load']), np.flip(self.HC_data['HC'])) # in g/kWh
-        self.HC_rate = self.HC_specific_rate * self.power # in g/hr
+                                          'HC': self.engine_data.iloc[self.engine_row][
+                                                    ['100% HC', '75% HC', '50% HC', '25% HC', '10% HC']]
+                                                / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
+                                                              0.7457 * self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.HC_specific_rate = np.interp(self.percent_load, np.flip(self.HC_data['engine_load']),
+                                          np.flip(self.HC_data['HC']))  # in g/kWh
+        self.HC_rate = self.HC_specific_rate * self.power  # in g/hr
 
     def solve_CO2(self):
         self.CO2_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
-                                      'CO2': self.engine_data.iloc[self.engine_row][
-                                                 ['100% CO2', '75% CO2', '50% CO2', '25% CO2', '10% CO2']]
-                                             / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
+                                           'CO2': self.engine_data.iloc[self.engine_row][
+                                                      ['100% CO2', '75% CO2', '50% CO2', '25% CO2', '10% CO2']]
+                                                  / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
+                                                                0.7457 * self.engine_data.iloc[self.engine_row][
+                                                                    'BHP'])})
         CO2_data_fit = np.polyfit(self.CO2_data['engine_load'], self.CO2_data['CO2'], 4)
-        self.CO2_specific_rate = np.polyval(CO2_data_fit, self.percent_load) # in kg/kWh
-        self.CO2_rate = self.CO2_specific_rate * self.power # in kg/hr
+        self.CO2_specific_rate = np.polyval(CO2_data_fit, self.percent_load)  # in kg/kWh
+        self.CO2_rate = self.CO2_specific_rate * self.power  # in kg/hr
 
     def solve_PM(self):
         PM_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1],
-                                     'PM': self.engine_data.iloc[self.engine_row][['100% PM', '75% PM', '50% PM', '25% PM', '10% PM']]
-                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1], 0.7457*self.engine_data.iloc[self.engine_row]['BHP'])})
-        self.PM_specific_rate = np.interp(self.percent_load, np.flip(PM_data['engine_load']), np.flip(PM_data['PM'])) # in g/kWh
-        self.PM_rate = self.PM_specific_rate * self.power # in g/hr
+                                     'PM': self.engine_data.iloc[self.engine_row][
+                                               ['100% PM', '75% PM', '50% PM', '25% PM', '10% PM']]
+                                           / np.multiply([1, 0.75, 0.5, 0.25, 0.1],
+                                                         0.7457 * self.engine_data.iloc[self.engine_row]['BHP'])})
+        self.PM_specific_rate = np.interp(self.percent_load, np.flip(PM_data['engine_load']),
+                                          np.flip(PM_data['PM']))  # in g/kWh
+        self.PM_rate = self.PM_specific_rate * self.power  # in g/hr
 
     def solve_CO2_eq(self):
         # GWP come from Table ES-1 from Inventory of US Greenhouse Gas Emissions and Sinks: 1990-2019
@@ -134,8 +148,9 @@ class HighSpeedDiesel(Source):
             drop=True) / 1000 + GWP_N2O * self.NOX_data['NOX'].reset_index(drop=True) / 1000
         CO2_eq_data = pd.DataFrame(data={'engine_load': [1, 0.75, 0.5, 0.25, 0.1], 'CO2_eq': CO2_eq})
 
-        self.CO2_eq_specific_rate = np.interp(self.percent_load, np.flip(CO2_eq_data['engine_load']), np.flip(CO2_eq_data['CO2_eq'])) # in kg/kWh
-        self.CO2_eq_rate = self.CO2_eq_specific_rate * self.power # kg/hr
+        self.CO2_eq_specific_rate = np.interp(self.percent_load, np.flip(CO2_eq_data['engine_load']),
+                                              np.flip(CO2_eq_data['CO2_eq']))  # in kg/kWh
+        self.CO2_eq_rate = self.CO2_eq_specific_rate * self.power  # kg/hr
 
     @abstractmethod
     def constraint(self, constraints, index):
@@ -143,6 +158,7 @@ class HighSpeedDiesel(Source):
 
     def type_name(self):
         pass
+
 
 class DieselGenerator(HighSpeedDiesel):
     def __init__(self, location, power, generator_efficiency=0.95):
@@ -158,25 +174,23 @@ class DieselGenerator(HighSpeedDiesel):
         def electrical_overload_constraint(engine_loading):
             # Need to think of a way to pass the index of the current engine to this function
             mechanical_power_wanted = 0
-            electrical_power_wanted = engine_loading[2*index + 1] # need to check this
+            electrical_power_wanted = engine_loading[2 * index + 1]  # need to check this
             self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
             return self.power_brake - self.power
 
         def electrical_zero_load_constraint(engine_loading):
             mechanical_power_wanted = 0
-            electrical_power_wanted = engine_loading[2*index + 1]  # need to check this
+            electrical_power_wanted = engine_loading[2 * index + 1]  # need to check this
             self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
             return self.power
 
         def mechanical_load_constraint_1(engine_loading):
-            mechanical_power_wanted = engine_loading[2*index] # need to check
-            return 1-mechanical_power_wanted
+            mechanical_power_wanted = engine_loading[2 * index]  # need to check
+            return 1 - mechanical_power_wanted
 
         def mechanical_load_constraint_2(engine_loading):
-            mechanical_power_wanted = engine_loading[2*index] # need to check
-            return 1+mechanical_power_wanted
-
-
+            mechanical_power_wanted = engine_loading[2 * index]  # need to check
+            return 1 + mechanical_power_wanted
 
         constraints.append({
             'type': 'ineq',
@@ -203,6 +217,7 @@ class DieselGenerator(HighSpeedDiesel):
     def type_name(self):
         return 'Diesel Generator'
 
+
 class DieselMechanical(HighSpeedDiesel):
     def __init__(self, location, power, shaftline_efficiency=0.99):
         super().__init__(location, power)
@@ -214,7 +229,6 @@ class DieselMechanical(HighSpeedDiesel):
         self.solve_emissions()
 
     def constraint(self, constraints, index):
-
         def mechanical_overload_constraint(engine_loading):
             # Need to think of a way to pass the index of the current engine to this function
             mechanical_power_wanted = engine_loading[2 * index]
@@ -224,19 +238,17 @@ class DieselMechanical(HighSpeedDiesel):
 
         def mechanical_zero_load_constraint(engine_loading):
             mechanical_power_wanted = engine_loading[2 * index]
-            electrical_power_wanted = 0 # need to check this
+            electrical_power_wanted = 0  # need to check this
             self.set_power_level(mechanical_power_wanted, electrical_power_wanted)
             return self.power
 
         def electrical_load_constraint_1(engine_loading):
             electrical_power_wanted = engine_loading[2 * index + 1]
-            return 1-electrical_power_wanted
+            return 1 - electrical_power_wanted
 
         def electrical_load_constraint_2(engine_loading):
             electrical_power_wanted = engine_loading[2 * index + 1]
-            return 1+electrical_power_wanted
-
-
+            return 1 + electrical_power_wanted
 
         constraints.append({
             'type': 'ineq',
@@ -263,22 +275,27 @@ class DieselMechanical(HighSpeedDiesel):
     def type_name(self):
         return 'Diesel Mechanical'
 
+
 class DieselShaftGenerator(HighSpeedDiesel):
-    def __init__(self, location, power, shaftline_efficiency_before_alternator=0.99, shaftline_efficiency_after_alternator=0.99, generator_efficiency=0.95):
+    def __init__(self, location, power, shaftline_efficiency_before_alternator=0.99,
+                 shaftline_efficiency_after_alternator=0.99, generator_efficiency=0.95):
         super().__init__(location, power)
         self.shaftline_efficiency_before_alternator = shaftline_efficiency_before_alternator
         self.shaftline_efficiency_after_alternator = shaftline_efficiency_after_alternator
         self.generator_efficiency = generator_efficiency
 
     def set_power_level(self, mechanical_power_wanted, electrical_power_wanted):
-        self.power = (mechanical_power_wanted/self.shaftline_efficiency_after_alternator + electrical_power_wanted/self.generator_efficiency) / self.shaftline_efficiency_before_alternator
+        self.power = (
+                                 mechanical_power_wanted / self.shaftline_efficiency_after_alternator + electrical_power_wanted / self.generator_efficiency) / self.shaftline_efficiency_before_alternator
         self.percent_load = self.power / self.power_brake
         self.solve_emissions()
 
     def bound(self, bounds):
-        mechanical_bound = (0, self.power_brake * self.shaftline_efficiency_before_alternator * self.shaftline_efficiency_after_alternator)
+        mechanical_bound = (
+        0, self.power_brake * self.shaftline_efficiency_before_alternator * self.shaftline_efficiency_after_alternator)
         bounds.append(mechanical_bound)
-        electrical_bound = (0, self.power_brake * self.shaftline_efficiency_before_alternator * self.generator_efficiency)
+        electrical_bound = (
+        0, self.power_brake * self.shaftline_efficiency_before_alternator * self.generator_efficiency)
         bounds.append(electrical_bound)
         return bounds
 
@@ -363,7 +380,8 @@ class LowSpeedDiesel(Source):
                         engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L4']
                 max_MCR = num_cylinder * (engine['L1'] - engine['L3']) / (
                         engine['nmax'] - engine['nmin']) * self.MCR_rpm + engine['L3']
-                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine['nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
+                if self.MCR_rpm > engine['nmin'] and self.MCR_rpm < engine[
+                    'nmax'] and self.MCR > min_MCR and self.MCR < max_MCR:
                     self.potential_engine.append(engine)
                     list_of_cylinder.append(num_cylinder)
         self.potential_engine = self.append_od(self.potential_engine, list_of_cylinder, 'Cylinders')
@@ -418,16 +436,3 @@ class LowSpeedDiesel(Source):
         for index, value in enumerate(ordered_dic):
             value[key] = added_list[index]
         return ordered_dic
-
-
-
-
-
-
-
-
-
-
-
-
-

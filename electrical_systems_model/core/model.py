@@ -3,7 +3,6 @@ import re
 
 import treelib
 
-from core.source import Source
 from core.sink import ElectricalSink
 from core.transmission import Cable, Panel
 from core.component import Component
@@ -20,7 +19,7 @@ class Model:
         self._source_list = []
         self._sink_tree = treelib.Tree()
         self._sink_tree.create_node("Root", 0, None, Root([0, 0, 0]))
-        main_swbd = Panel([1, 1, 1], 1)  # TODO: place switchboard in a real location
+        main_swbd = Panel([1, 1, 1], 1)  # TODO: place switchboard in a calculated location
         main_swbd.name = "Main Switchboard"
         self._sink_tree.create_node(main_swbd.name, 1, 0, main_swbd)
         self.load_case_num = 0
@@ -278,8 +277,7 @@ class Model:
         self.reset_components()
 
     def update_dependencies(self):
-        # TODO: remove this
-        # this is a hasty fix for a more specific problem that every time we update the tree we need
+        # every time we update the tree we need
         # to update each component
 
         # assign parents/children to components

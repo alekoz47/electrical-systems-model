@@ -1,12 +1,13 @@
-import numpy as np
+import time
+
+import pandas as pd
 from scipy.optimize import minimize
 from scipy.optimize import basinhopping
+
 from core.engine_loading import EngineLoadSelector
-import time
-import pandas as pd
 
 
-class EngineRatingSelector():
+class EngineRatingSelector:
     def __init__(self, source_list, load_cases):
         self.source_list = source_list
         self.load_cases = load_cases
@@ -31,14 +32,11 @@ class EngineRatingSelector():
         self.optimizer()
 
     def set_constraints(self):
-
-        # TODO Set constraint that engine rating need to be 110% of maximum electrical and maximum mechanical power
-        # TODO ineq constraint
-        # Someting different for shaft power
+        # TODO: make this an inequality constraint to allow for float error
+        # Something different for shaft power?
 
         for index, source in enumerate(self.source_list):
             def non_zero_constraint(engine_loading):
-
                 return self.power_brake - self.power
 
             self.constraints.append({
@@ -60,11 +58,13 @@ class EngineRatingSelector():
         for type_i in types:
             sub_list = list(filter(lambda x: type(x) is type_i, self.source_list))
             for index, source in enumerate(sub_list):
-                ratings_name_list.append(source.type_name() + ' ' + str(index+1))
+                ratings_name_list.append(source.type_name() + ' ' + str(index + 1))
             for case in self.load_cases:
                 for index, source in enumerate(sub_list):
-                    loadings_name_list.append(source.type_name() + ' ' + str(index+1) + ': ' + case['Name'] + ' Mechanical Loading')
-                    loadings_name_list.append(source.type_name() + ' ' + str(index+1) + ': ' + case['Name'] + ' Electrical Loading')
+                    loadings_name_list.append(
+                        source.type_name() + ' ' + str(index + 1) + ': ' + case['Name'] + ' Mechanical Loading')
+                    loadings_name_list.append(
+                        source.type_name() + ' ' + str(index + 1) + ': ' + case['Name'] + ' Electrical Loading')
 
         for case in self.load_cases:
             fuel_burn_list.append(case['Name'] + ' Fuel Burn Rate')
@@ -76,17 +76,14 @@ class EngineRatingSelector():
         print(self.columns)
 
     def write_to_csv(self):
-        self.opti_data.to_csv('../data/output.csv', index_label=True)
+        self.opti_data.to_csv('../../tests/outputs/output.csv', index_label=True)
 
     def obj_func(self, engine_rating, source_list, load_cases):
         if self.previous_iterate_time is not None:
             self.iteration_time = time.time() - self.previous_iterate_time
             print('Iteration Time: ', round(self.iteration_time, 2))
 
-
         self.previous_iterate_time = time.time()
-
-        
 
         normalized_fuel_burn = 0
         new_engine_loading = []
@@ -138,10 +135,10 @@ class EngineRatingSelector():
         self.result = minimize(
             fun=self.obj_func,
             args=(self.source_list, self.load_cases),
-            #x0=[1500]*len(self.source_list),
+            # x0=[1500]*len(self.source_list),
             x0=[2000, 1000, 1],
-            #bounds=[(0, 5000)]*len(self.source_list),
-            #constraints = self.constraints,
+            # bounds=[(0, 5000)]*len(self.source_list),
+            # constraints = self.constraints,
             method='L-BFGS-B',
             options={'gtol': 1e-09}
             # options = {'maxiter': 100, 'ftol': 1e-11} # 'eps': 10
@@ -153,4 +150,3 @@ class EngineRatingSelector():
             x0=[1500, 1000, 300],
             minimizer_kwargs={'args': (self.source_list, self.load_cases), 'method': 'SLSQP'}
         )
-
