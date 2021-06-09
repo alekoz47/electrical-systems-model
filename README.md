@@ -58,7 +58,7 @@ It has yet to be packaged properly, so you will need to set it up in PyCharm or 
 The following are typical use cases with short directions:
 
 ### Modeling an electrical distribution system
-```
+```python
 epla_path = "../../tests/inputs/EPLA_example_1.csv"
 load_cases = [0, 1, 2, 3, 4]
 model = Model()
@@ -76,7 +76,7 @@ model.export_tree(show_cables=False)
 ```
 
 ### Rating a set of engines over several loading conditions
-```
+```python
 at_sea = {
     'Name' : 'At Sea',
     'Mechanical Power': 0,
@@ -108,7 +108,7 @@ test_rater = EngineRatingSelector(source_list, load_cases)
 ```
 
 ### Generating a Pareto front set of rated engines
-```
+```python
 at_sea = {
     'Name' : 'At Sea',
     'Mechanical Power': 0,
