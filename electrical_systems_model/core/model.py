@@ -3,13 +3,12 @@ import re
 
 import treelib
 
-from core.source import Source
+from core.component import Component
 from core.sink import ElectricalSink
 from core.transmission import Cable, Panel
-from core.component import Component
-from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index, list_of_type
 from helpers.input_utils import group_dictlist_by_key, import_csv_as_dictlist
 from helpers.math_utils import taxicab_ship_distance
+from helpers.tree_utils import get_tree_edges, link_into_edge, get_largest_index, list_of_type
 
 
 class Model:
@@ -24,7 +23,8 @@ class Model:
         main_swbd.name = "Main Switchboard"
         self._sink_tree.create_node(main_swbd.name, 1, 0, main_swbd)
         self.load_case_num = 0
-        self.epla_path = "../data/EPLA_default.csv"    # default EPLA path
+        self.epla_path = "C:/Users/koliver/Desktop/senir yr/this/electrical-systems-model/electrical_systems_model/data" \
+                "/EPLA_default.csv"  # default EPLA path
 
     def load_epla(self, new_path):
         self.epla_path = new_path
@@ -127,6 +127,7 @@ class Model:
         Splits subtrees of panels into new panels based on distance between groups.
         :param max_distance: maximum distance between loads and panel
         """
+
         # There are two good methods here. The easiest will be to separate the ship into quadrants but will require
         # additional data. The harder will be to separate components into clusters based on K-Means Clustering.
         # The simple method is to place the panel next to the location of the first component, then enforce a strict
@@ -188,6 +189,7 @@ class Model:
                         chosen_panel = new_panel_node
                     # attach the misfit component to the chosen panel
                     self._sink_tree.move_node(child.identifier, chosen_panel.identifier)
+                    load_center_count += 1
                     load_center_count += 1
 
         self.reset_components()  # does this need to be run?
@@ -360,14 +362,18 @@ class Model:
 
     def export_tree(self, show_cables=True):
         if show_cables:
-            self._sink_tree.to_graphviz(filename="../../tests/outputs/graph1.gv", shape=u'circle', graph=u'digraph')
+            self._sink_tree.to_graphviz(
+                filename="C:/Users/koliver/Desktop/senir yr/sem 2/this/electrical-systems-model/electrical_systems_model/tests/outputs/graph1.gv",
+                shape=u'circle', graph=u'digraph')
         else:
             tree = self.copy_tree()
             cables = list_of_type(tree, Cable)
             print(cables)
             for cable in cables:
                 tree.link_past_node(cable.identifier)
-            tree.to_graphviz(filename="../../tests/outputs/graph2.gv", shape=u'circle', graph=u'digraph')
+            tree.to_graphviz(
+                filename="C:/Users/koliver/Desktop/senir yr/sem 2/this/electrical-systems-model/electrical_systems_model/tests/outputs/graph2.gv",
+                shape=u'circle', graph=u'digraph')
 
     def export_old(self, filepath):
         pass

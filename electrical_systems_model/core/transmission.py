@@ -81,7 +81,8 @@ class Cable(Transmission):
         return self.power_in
 
     def load_data(self):
-        data_path = '../data/abs_cable_size.csv'
+        data_path = "C:/Users/koliver/Desktop/senir yr/sem " \
+                    "2/this/electrical-systems-model/electrical_systems_model/data/abs_cable_size.csv "
         with open(data_path) as file:
             data = csv.DictReader(file)
             for line in data:
@@ -107,9 +108,9 @@ class Cable(Transmission):
         rated_temp = 85  # degree C
         alpha_temp_coef = 0.00429  # TODO Find source for Alpha
         resistivity_copper_rated_temp = resistivity_copper_20C * (
-                    1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
+                1 + alpha_temp_coef * (rated_temp - resistivity_temp))  # Ohm*m
         resistance_per_meter = resistivity_copper_rated_temp / (
-                    float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
+                float(self._CABLE_SIZE[selected_size_index]['area']) / (1000 ** 2))  # Ohm/m
 
         self.resistance = resistance_per_meter * self.length / self.num_conductors  # Check EE
 
@@ -131,7 +132,8 @@ class Cable(Transmission):
         for index, cable_size in enumerate(self._CABLE_SIZE):
             self.voltage_drop_percent = (self.power_out.current * float(self._CABLE_SIZE[index]['resistance']) *
                                          self.length / self.num_conductors) / self.power_out.voltage
-            if float(cable_size['XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
+            if float(cable_size[
+                         'XLPE']) > self.power_out.current / self.num_conductors and self.voltage_drop_percent <= 0.3:
                 selected_size_index = index
                 return selected_size_index
         return -1

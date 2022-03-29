@@ -210,7 +210,8 @@ class LowSpeedDiesel(Source):
         return rpm_mp
 
     def load_data(self):
-        data_path = '../data/MAN_engines.csv'
+        data_path = "C:/Users/koliver/Desktop/senir yr/sem " \
+                    "2/this/electrical-systems-model/electrical_systems_model/data/Cat_engine_data.csv "
         with open(data_path) as file:
             data = csv.DictReader(file)
             for row in data:
